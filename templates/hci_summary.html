@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCI Summary Report Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 20px;
+            border-right: 1px solid #cccccc;
+        }
+
+        .sidebar h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333333;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 0;
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid #333333;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #ffffff;
+            color: #000000;
+            padding-left: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .section {
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #cccccc;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cccccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn-danger {
+            background-color: #ffffff;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .agent-checkbox {
+            border: 2px solid #cccccc;
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .agent-checkbox:hover {
+            border-color: #000000;
+        }
+
+        .agent-checkbox.selected {
+            border-color: #000000;
+            background-color: #f8f9fa;
+        }
+
+        .agent-checkbox input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .agent-checkbox label {
+            cursor: pointer;
+            font-weight: 500;
+            margin: 0;
+            flex: 1;
+        }
+
+        .agent-checkbox .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .agent-checkbox:hover .delete-btn {
+            display: block;
+        }
+
+        .agent-checkbox .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 32px;
+            background-color: #f0f0f0;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #cccccc;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #333333 0%, #555555 50%, #333333 100%);
+            width: 0%;
+            transition: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-fill.pulsing::before {
+            animation: shimmer 1.5s infinite;
+        }
+
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .log-container div {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background-color: #e3f2fd;
+            border: 1px solid #1976d2;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #0d47a1;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .bulk-actions {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+
+        .bulk-actions button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .date-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1>HCI Summary Report</h1>
+            <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146zM12 14H9.5a.5.5 0 0 0-.5.5v.5H12v-.5a.5.5 0 0 0-.5-.5z"/>
+                    <path d="M15.5 8.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5z"/>
+                    <path fill-rule="evenodd" d="M11.854 3.146a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L11.5 4.207V6.5a.5.5 0 0 0 1 0V3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h2.293z"/>
+                </svg>
+                Back to Hub
+            </a>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>HCI Summary Report Automation</h1>
+            </div>
+
+            <div class="info-box">
+                <h3>How This Works</h3>
+                <p>• This automation generates HCI agent summary reports for any selected date</p>
+                <p>• It downloads individual reports for each selected HCI agent</p>
+                <p>• Processes and combines the data into comprehensive Excel reports with charts</p>
+                <p>• All files are packaged into a ZIP download for easy access</p>
+            </div>
+
+            <div class="two-column">
+                <div>
+                    <div class="section">
+                        <h2>HCI Agent Management</h2>
+                        <div class="form-group">
+                            <label for="newAgentName">Add New Agent:</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="newAgentName" placeholder="e.g., NEW_HCI_AGENT (1234567)" style="flex: 1;">
+                                <button class="btn" onclick="addAgent()" style="width: auto; padding: 8px 16px;">Add</button>
+                            </div>
+                        </div>
+                        <div class="agents-grid" id="agentsGrid">
+                            <!-- Agents will be loaded here -->
+                        </div>
+                        <div class="bulk-actions">
+                            <button class="btn" onclick="selectAllAgents()" style="font-size: 12px; padding: 6px 12px;">Select All</button>
+                            <button class="btn" onclick="deselectAllAgents()" style="font-size: 12px; padding: 6px 12px;">Deselect All</button>
+                            <span style="margin-left: 15px; font-weight: 500;">Selected: <span id="selectedCount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section">
+                        <h2>Report Configuration</h2>
+                        
+                        <div class="form-group">
+                            <label for="reportDate">Report Date:</label>
+                            <input type="date" id="reportDate" title="Select the date to generate reports for">
+                            <div class="date-note">
+                                💡 <strong>Tip:</strong> Uses previous date as default.
+                            </div>
+                        </div>
+
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                            Uses your saved LiveVox credentials from the Hub page. Downloads reports for selected agents and packages them into a ZIP file.
+                        </p>
+                        <button class="btn" onclick="startHciAutomation()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                            </svg>
+                            Generate HCI Summary Reports
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-container" id="progressContainer">
+                <div class="section">
+                    <h2>Automation Progress</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                    <div class="log-container" id="logContainer">
+                        <div id="logContent">
+                            <!-- Log entries will be added here dynamically -->
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="stopAutomation()" style="margin-top: 15px;">Stop Automation</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let availableAgents = [];
+        let selectedAgents = [];
+        let currentTaskId = null;
+        let progressInterval = null;
+        let lastLogMessage = '';
+        let currentProgressDisplay = 0.0; 
+        let targetProgressValue = 0.0;
+        let animationTimer = null;
+
+        // Load agents on page load and set default date
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHciAgents();
+            
+            // Set default date to yesterday
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            document.getElementById('reportDate').value = yesterdayStr;
+        });
+
+        async function loadHciAgents() {
+            try {
+                const response = await fetch('/api/hci/agents');
+                const data = await response.json();
+                availableAgents = data.agents;
+                
+                const agentsGrid = document.getElementById('agentsGrid');
+                agentsGrid.innerHTML = '';
+                
+                availableAgents.forEach((agent, index) => {
+                    const agentDiv = document.createElement('div');
+                    agentDiv.className = 'agent-checkbox';
+                    agentDiv.style.display = 'flex';
+                    agentDiv.style.alignItems = 'center';
+                    
+                    agentDiv.innerHTML = `
+                        <input type="checkbox" id="agent_${index}" onchange="toggleAgent('${agent}', this.parentElement)">
+                        <label for="agent_${index}">${agent}</label>
+                        <button class="delete-btn" onclick="event.stopPropagation(); removeAgent('${agent}')" title="Remove agent">×</button>
+                    `;
+                    
+                    agentDiv.onclick = function(e) {
+                        if (e.target.type !== 'checkbox' && !e.target.classList.contains('delete-btn')) {
+                            const checkbox = agentDiv.querySelector('input[type="checkbox"]');
+                            checkbox.checked = !checkbox.checked;
+                            toggleAgent(agent, agentDiv);
+                        }
+                    };
+                    
+                    agentsGrid.appendChild(agentDiv);
+                });
+                
+                updateSelectedCount();
+            } catch (error) {
+                console.error('Error loading HCI agents:', error);
+                alert('Error loading HCI agents: ' + error.message);
+            }
+        }
+
+        async function addAgent() {
+            const newAgentName = document.getElementById('newAgentName').value.trim();
+            
+            if (!newAgentName) {
+                alert('Please enter an agent name');
+                return;
+            }
+            
+            if (availableAgents.includes(newAgentName)) {
+                alert('Agent already exists');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/hci/agents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ agent_name: newAgentName })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('newAgentName').value = '';
+                    await loadHciAgents(); // Reload the agents list
+                } else {
+                    const error = await response.json();
+                    alert('Error adding agent: ' + error.detail);
+                }
+            } catch (error) {
+                alert('Error adding agent: ' + error.message);
+            }
+        }
+
+        async function removeAgent(agentName) {
+            if (!confirm(`Are you sure you want to remove "${agentName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/hci/agents', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ agent_name: agentName })
+                });
+                
+                if (response.ok) {
+                    // Remove from selected agents if it was selected
+                    selectedAgents = selectedAgents.filter(a => a !== agentName);
+                    await loadHciAgents(); // Reload the agents list
+                } else {
+                    const error = await response.json();
+                    alert('Error removing agent: ' + error.detail);
+                }
+            } catch (error) {
+                alert('Error removing agent: ' + error.message);
+            }
+        }
+
+        function toggleAgent(agent, element) {
+            const checkbox = element.querySelector('input[type="checkbox"]');
+            const isSelected = selectedAgents.includes(agent);
+            
+            if (isSelected) {
+                selectedAgents = selectedAgents.filter(a => a !== agent);
+                element.classList.remove('selected');
+                checkbox.checked = false;
+            } else {
+                selectedAgents.push(agent);
+                element.classList.add('selected');
+                checkbox.checked = true;
+            }
+            
+            updateSelectedCount();
+        }
+
+        function selectAllAgents() {
+            selectedAgents = [...availableAgents];
+            
+            document.querySelectorAll('.agent-checkbox').forEach(element => {
+                element.classList.add('selected');
+                element.querySelector('input[type="checkbox"]').checked = true;
+            });
+            
+            updateSelectedCount();
+        }
+
+        function deselectAllAgents() {
+            selectedAgents = [];
+            
+            document.querySelectorAll('.agent-checkbox').forEach(element => {
+                element.classList.remove('selected');
+                element.querySelector('input[type="checkbox"]').checked = false;
+            });
+            
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = selectedAgents.length;
+        }
+
+        function startSmoothAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+            }
+            
+            animationTimer = setInterval(animateProgress, 50); // 50ms for smooth animation
+        }
+
+        function animateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            
+            // Stop the timer only when the job is done and we've reached 100%
+            if (targetProgressValue >= 100 && currentProgressDisplay >= 100) {
+                clearInterval(animationTimer);
+                currentProgressDisplay = 100.0;
+                progressFill.style.width = '100%';
+                progressFill.textContent = '100.0%';
+                progressFill.classList.remove('pulsing');
+                return;
+            }
+
+            // If we are behind the target, move faster to catch up.
+            if (currentProgressDisplay < targetProgressValue) {
+                // Move by a fraction of the remaining distance for a smooth, elastic feel
+                let increment = (targetProgressValue - currentProgressDisplay) * 0.04;
+                // Ensure a minimum "catch up" speed
+                if (increment < 0.1) {
+                    increment = 0.1;
+                }
+                currentProgressDisplay += increment;
+            } 
+            // If we have reached the target, but the final target isn't 100 yet, keep moving forward very slowly.
+            else if (targetProgressValue < 100) {
+                currentProgressDisplay += 0.01; // This is the "never stop" part
+            }
+
+            // Don't let the animation go past 99.9 until the final "finished" signal
+            if (currentProgressDisplay > 99.9 && targetProgressValue < 100) {
+                currentProgressDisplay = 99.9;
+            }
+            
+            // Update the UI
+            progressFill.style.width = `${currentProgressDisplay}%`;
+            progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+        }
+
+        async function startHciAutomation() {
+            // Check if any agents are selected
+            if (selectedAgents.length === 0) {
+                alert('Please select at least one HCI agent to process.');
+                return;
+            }
+
+            // Get credentials from the browser's local storage (from Hub page)
+            const portal = localStorage.getItem('livevox_portal');
+            const username = localStorage.getItem('livevox_username');
+            const password = localStorage.getItem('livevox_password');
+
+            if (!portal || !username || !password) {
+                alert('LiveVox credentials not found. Please return to the Hub page to set your credentials.');
+                return;
+            }
+
+            // Get selected date
+            const reportDate = document.getElementById('reportDate').value;
+            
+            // Validate date if provided
+            if (reportDate) {
+                const selectedDate = new Date(reportDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Reset time for comparison
+                
+                if (selectedDate > today) {
+                    alert('Cannot generate reports for future dates. Please select today or an earlier date.');
+                    return;
+                }
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('url', portal);
+            formData.append('selected_agents', selectedAgents.join(','));
+            
+            // Always append report_date (even if empty, backend will handle default)
+            if (reportDate) {
+                formData.append('report_date', reportDate);
+                console.log(`Using selected date: ${reportDate}`);
+            } else {
+                console.log('No date selected, backend will use yesterday as default');
+            }
+
+            try {
+                const response = await fetch('/api/hci/automation/start', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentTaskId = result.task_id;
+                    showProgress();
+                    startProgressPolling();
+                } else {
+                    let errorMessage = 'Unknown error starting HCI automation.';
+                    try {
+                        const error = await response.json();
+                        if (error.detail) {
+                            errorMessage = Array.isArray(error.detail) ? error.detail.map(e => `${e.loc.join('.')} - ${e.msg}`).join('\n') : error.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = await response.text();
+                    }
+                    alert('Error starting HCI automation:\n' + errorMessage);
+                }
+            } catch (error) {
+                alert('Network error starting HCI automation: ' + error.message);
+            }
+        }
+
+
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Reset smooth progress animation
+            currentProgressDisplay = 0.0;
+            targetProgressValue = 0.0;
+            
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0.0%';
+            progressFill.classList.add('pulsing');
+            
+            // SHOW THE STOP BUTTON
+            const stopBtn = document.querySelector('.btn-danger');
+            if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                stopBtn.style.display = 'inline-block';
+            }
+            
+            // Clear log content and add initial message
+            const logContent = document.getElementById('logContent');
+            logContent.innerHTML = '';
+            
+            const reportDate = document.getElementById('reportDate').value;
+            let dateStr;
+            if (reportDate) {
+                const selectedDate = new Date(reportDate);
+                dateStr = selectedDate.toLocaleDateString();
+            } else {
+                dateStr = 'yesterday (default)';
+            }
+            
+            const initialLog = document.createElement('div');
+            initialLog.textContent = `Starting HCI automation for ${dateStr}...`;
+            logContent.appendChild(initialLog);
+            
+            lastLogMessage = `Starting HCI automation for ${dateStr}...`;
+            
+            // Start smooth animation
+            startSmoothAnimation();
+        }
+
+        function startProgressPolling() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            progressInterval = setInterval(async () => {
+                if (!currentTaskId) return;
+                
+                try {
+                    const response = await fetch(`/api/automation/${currentTaskId}/status`);
+                    if (response.ok) {
+                        const status = await response.json();
+                        updateProgress(status.progress, status.message);
+                        
+                        if (status.status === 'completed') {
+                            clearInterval(progressInterval);
+                            targetProgressValue = 100.0;
+                            updateProgress(100, "HCI automation completed! Preparing ZIP download...");
+                            
+                            // Trigger ZIP download
+                            setTimeout(() => {
+                                window.location.href = `/api/automation/${currentTaskId}/download`;
+                                // DON'T set currentTaskId = null here immediately!
+                                
+                                updateProgress(100, "✅ Download started! Check your browser downloads.");
+                                
+                                // Hide stop button since automation is done
+                                const stopBtn = document.querySelector('.btn-danger');
+                                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                    stopBtn.style.display = 'none';
+                                }
+                                
+                                // Clear currentTaskId after a longer delay to allow download to start
+                                setTimeout(() => {
+                                    currentTaskId = null;
+                                }, 5000);
+                                
+                            }, 1000);
+                            
+                        } else if (status.status === 'failed') {
+                            clearInterval(progressInterval);
+                            currentTaskId = null;
+                            updateProgress(0, "❌ HCI automation failed: " + status.message);
+                            
+                            const stopBtn = document.querySelector('.btn-danger');
+                            if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                stopBtn.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 2000);
+        }
+
+        function updateProgress(progress, message) {
+            // Set the target for smooth animation instead of direct update
+            targetProgressValue = parseFloat(progress);
+            
+            const logContent = document.getElementById('logContent');
+            
+            // Only add to log if message is different from last one
+            if (message !== lastLogMessage) {
+                const timestamp = new Date().toLocaleTimeString();
+                
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                logContent.appendChild(logEntry);
+                
+                // Keep only last 50 log entries to prevent memory issues
+                while (logContent.children.length > 50) {
+                    logContent.removeChild(logContent.firstChild);
+                }
+                
+                logContent.scrollTop = logContent.scrollHeight;
+                lastLogMessage = message;
+            }
+        }
+
+        async function stopAutomation() {
+            if (currentTaskId) {
+                try {
+                    // Call the backend to actually stop the automation
+                    const response = await fetch(`/api/automation/${currentTaskId}/stop`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Automation stopped:', result.message);
+                    } else {
+                        console.error('Failed to stop automation on backend');
+                    }
+                } catch (error) {
+                    console.error('Error stopping automation:', error);
+                }
+                
+                // Clean up frontend regardless of backend response
+                currentTaskId = null;
+                clearInterval(progressInterval);
+                
+                // STOP THE SMOOTH ANIMATION
+                if (animationTimer) {
+                    clearInterval(animationTimer);
+                    animationTimer = null;
+                }
+                
+                // Reset progress display
+                currentProgressDisplay = 0.0;
+                targetProgressValue = 0.0;
+                
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = '0%';
+                progressFill.textContent = '0.0%';
+                progressFill.classList.remove('pulsing');
+                
+                updateProgress(0, "🛑 Automation stopped by user");
+                
+                // Hide the stop button
+                const stopBtn = document.querySelector('.btn-danger');
+                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                    stopBtn.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

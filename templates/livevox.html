@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveVox Call Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 20px;
+            border-right: 1px solid #cccccc;
+        }
+
+        .sidebar h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333333;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 0;
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid #333333;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #ffffff;
+            color: #000000;
+            padding-left: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #000000;
+            margin-bottom: 30px;
+            justify-content: center; 
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            border-bottom-color: #000000;
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .tab:hover:not(.active) {
+            background-color: #f5f5f5;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #cccccc;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cccccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: #000000;
+            border-color: #000000;
+        }
+
+        .btn-secondary:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .btn-danger {
+            background-color: #ffffff;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .agent-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+        }
+
+        .agent-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .agent-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .agent-item.selected {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .call-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #cccccc;
+        }
+
+        .call-table th,
+        .call-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .call-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .call-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+
+        /* SMOOTH PROGRESS BAR STYLING */
+        .progress-bar {
+            width: 100%;
+            height: 32px;
+            background-color: #f0f0f0;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #cccccc;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #333333 0%, #555555 50%, #333333 100%);
+            width: 0%;
+            transition: none; /* We'll handle transitions manually */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Subtle animation shimmer effect */
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-fill.pulsing::before {
+            animation: shimmer 1.5s infinite;
+        }
+
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .log-container div {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #000000;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+
+        .alert-success {
+            background-color: #ffffff;
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .alert-error {
+            background-color: #ffffff;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .file-input {
+            border: 2px dashed #cccccc;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .file-input:hover {
+            border-color: #000000;
+        }
+
+        .file-input.dragover {
+            border-color: #000000;
+            background-color: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1>LiveVox Call Automation</h1>
+            <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146zM12 14H9.5a.5.5 0 0 0-.5.5v.5H12v-.5a.5.5 0 0 0-.5-.5z"/>
+                    <path d="M15.5 8.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5z"/>
+                    <path fill-rule="evenodd" d="M11.854 3.146a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L11.5 4.207V6.5a.5.5 0 0 0 1 0V3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h2.293z"/>
+                </svg>
+                Back to Hub
+            </a>
+            
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Call Recording Automation - LiveVox</h1>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('management')" style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                    </svg>
+                    Agent & Call Management
+                </button>
+                <button class="tab" onclick="showTab('specific')" style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
+                        <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    Specific Calls
+                </button>
+                <button class="tab" onclick="showTab('all')" style="display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM5 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                    All Calls
+                </button>
+            </div>
+
+            <!-- Agent Management Tab -->
+            <div id="management" class="tab-content active">
+                <div class="two-column">
+                    <div class="section">
+                        <h2>Agents</h2>
+                        <div class="agent-list" id="agentList">
+                            <!-- Agents will be loaded here -->
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button class="btn" onclick="showAgentModal()">Add Agent</button>
+                            <button class="btn btn-danger" onclick="deleteAllAgents()">Delete All Agents</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section">
+                            <h2>Calls for Selected Agent</h2>
+                            <table class="call-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th> <th>Phone Number</th>
+                                        <th>Duration (seconds)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="callTable">
+                                    </tbody>
+                            </table>
+                            <div style="margin-top: 15px;">
+                                <button class="btn" onclick="showCallModal()">Add Call</button>
+                                <button class="btn btn-danger" onclick="deleteAllCalls()">Delete All</button>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h2>Bulk Call Management</h2>
+                            <div class="file-input" onclick="document.getElementById('excelFile').click()">
+                                <p>Click to upload Excel file with calls</p>
+                                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;" onchange="uploadExcel()">
+                            </div>
+                            <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top: 15px;">Download Excel Template</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specific Calls Tab -->
+            <div id="specific" class="tab-content">
+                <div class="section">
+                    <h2>Configuration for Specific Call Downloads</h2>
+                    <div class="form-group">
+                        <label>Select Agent:</label>
+                        <select id="agentSelect1">
+                            </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date (MM/DD/YYYY):</label>
+                        <input type="text" id="startDate1" value="01/01/2024">
+                    </div>
+                    <button class="btn" onclick="startAutomation('specific')" style="display: inline-flex; align-items: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                        </svg>
+                        Start Automation
+                    </button>
+                </div>
+
+                <div class="section">
+                    <h2>How This Works</h2>
+                    <p>• First <strong style="font-size: 1.1em;">configure</strong> agents in the <strong style="font-size: 1.1em;">Agent & Call Management</strong> tab, it does <strong style="font-size: 1.1em;">need</strong> call configuration.</p>
+                    <p>• Downloads <strong style="font-size: 1.1em;">specific</strong> call recordings with exact duration matching.</p>
+                    <p>• Uses the <strong style="font-size: 1.1em;">phone numbers</strong> and <strong style="font-size: 1.1em;">duration</strong> you configured for each agent.</p>
+                </div>
+            </div>
+
+            <!-- All Calls Tab -->
+            <div id="all" class="tab-content">
+                <div class="section">
+                    <h2>Configuration for All Call Downloads</h2>
+                    <div class="form-group">
+                        <label>Select Agent:</label>
+                        <select id="agentSelect2">
+                            </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date (MM/DD/YYYY):</label>
+                        <input type="text" id="startDate2" value="05/01/2024">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Numbers (comma-separated):</label>
+                        <textarea id="phoneNumbers" rows="4" placeholder="7028710005,7027721687,7028710005"></textarea>
+                    </div>
+                    <button class="btn" onclick="startAutomation('all')" style="display: inline-flex; align-items: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>
+                        </svg>
+                        Start Automation
+                    </button>
+                </div>
+
+                <div class="section">
+                    <h2>How This Works</h2>
+                    <p>• First <strong style="font-size: 1.1em;">configure</strong> agents in the <strong style="font-size: 1.1em;">Agent & Call Management</strong> tab, it does <strong style="font-size: 1.1em;">not need</strong> call configuration.</p>
+                    <p>• Downloads <strong style="font-size: 1.1em;">ALL</strong> call recordings for the specified phone numbers.</p>
+                    <p>• Enter <strong style="font-size: 1.1em;">multiple</strong> phone numbers separated by commas.</p>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-container" id="progressContainer">
+                <div class="section">
+                    <h2>Automation Progress</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                    <div class="log-container" id="logContainer">
+                        <div id="logContent">
+                            <!-- Log entries will be added here dynamically -->
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="stopAutomation()" style="margin-top: 15px;">Stop Automation</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Agent Modal -->
+    <div id="agentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('agentModal')">&times;</span>
+            <h3>Add/Edit Agent</h3>
+            <div class="form-group">
+                <label>Agent ID:</label>
+                <input type="text" id="modalAgentId" placeholder="e.g., 3P_95">
+            </div>
+            <div class="form-group">
+                <label>Folder Name:</label>
+                <input type="text" id="modalFolder" placeholder="e.g., Chuck_Calls">
+            </div>
+            <div class="form-group">
+                <label>Locator ID:</label>
+                <input type="text" id="modalLocatorId" placeholder="e.g., 3963665">
+            </div>
+            <button class="btn" onclick="saveAgent()">Save Agent</button>
+            <button class="btn btn-secondary" onclick="closeModal('agentModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Call Modal -->
+    <div id="callModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('callModal')">&times;</span>
+            <h3>Add/Edit Call</h3>
+            <div class="form-group">
+                <label>Phone Number:</label>
+                <input type="text" id="modalPhone" placeholder="e.g., 7028710005">
+            </div>
+            <div class="form-group">
+                <label>Duration (seconds):</label>
+                <input type="text" id="modalDuration" placeholder="e.g., 62">
+            </div>
+            <button class="btn" onclick="saveCall()">Save Call</button>
+            <button class="btn btn-secondary" onclick="closeModal('callModal')">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedAgent = null;
+        let selectedAgentData = null;
+        let selectedCallIndex = null;
+        let selectedCallData = null;
+        let currentTaskId = null;
+        let progressInterval = null;
+        let editingAgent = false;
+        let editingCall = false;
+        let lastLogMessage = '';
+
+        // SMOOTH PROGRESS ANIMATION VARIABLES
+        let currentProgressDisplay = 0.0; // The smoothly animated value (e.g. 25.1)
+        let targetProgressValue = 0.0;    // The precise value from the worker (e.g. 30)
+        let animationTimer = null;
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tab content sections
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Deactivate all main tab buttons
+            document.querySelectorAll('.tabs .tab').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show the correct tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Find the main tab button that corresponds to tabName and activate it
+            const mainTabToActivate = document.querySelector(`.tabs .tab[onclick="showTab('${tabName}')"]`);
+            if (mainTabToActivate) {
+                mainTabToActivate.classList.add('active');
+            }
+        }
+
+        // Load agents on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAgents();
+            loadAgentSelects();
+        });
+
+        function startSmoothAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+            }
+            
+            animationTimer = setInterval(animateProgress, 50); // 50ms for smooth animation
+        }
+
+        function animateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            
+            // Stop the timer only when the job is done and we've reached 100%
+            if (targetProgressValue >= 100 && currentProgressDisplay >= 100) {
+                clearInterval(animationTimer);
+                currentProgressDisplay = 100.0;
+                progressFill.style.width = '100%';
+                progressFill.textContent = '100.0%';
+                progressFill.classList.remove('pulsing');
+                return;
+            }
+
+            // If we are behind the target, move faster to catch up.
+            if (currentProgressDisplay < targetProgressValue) {
+                // Move by a fraction of the remaining distance for a smooth, elastic feel
+                let increment = (targetProgressValue - currentProgressDisplay) * 0.04;
+                // Ensure a minimum "catch up" speed
+                if (increment < 0.1) {
+                    increment = 0.1;
+                }
+                currentProgressDisplay += increment;
+            } 
+            // If we have reached the target, but the final target isn't 100 yet, keep moving forward very slowly.
+            else if (targetProgressValue < 100) {
+                currentProgressDisplay += 0.01; // This is the "never stop" part
+            }
+
+            // Don't let the animation go past 99.9 until the final "finished" signal
+            if (currentProgressDisplay > 99.9 && targetProgressValue < 100) {
+                currentProgressDisplay = 99.9;
+            }
+            
+            // Update the UI
+            progressFill.style.width = `${currentProgressDisplay}%`;
+            progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+        }
+
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const agents = await response.json();
+                
+                const agentList = document.getElementById('agentList');
+                agentList.innerHTML = '';
+                
+                for (const [agentId, agent] of Object.entries(agents)) {
+                    const agentDiv = document.createElement('div');
+                    agentDiv.className = 'agent-item';
+                    agentDiv.onclick = () => selectAgent(agentId, agent, agentDiv);
+
+                    // Create a span for the agent text
+                    const agentText = document.createElement('span');
+                    agentText.innerHTML = `${agentId} (${agent.folder})`;
+
+                    // Create a div for the buttons, mimicking the call table button style
+                    const buttonsDiv = document.createElement('div');
+                    // Use event.stopPropagation() to prevent the row selection from firing when a button is clicked
+                    buttonsDiv.innerHTML = `
+                        <button class="btn btn-secondary" onclick="event.stopPropagation(); editAgent('${agentId}', ${JSON.stringify(agent).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); deleteAgent('${agentId}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                    `;
+                    
+                    agentDiv.appendChild(agentText);
+                    agentDiv.appendChild(buttonsDiv);
+                    agentList.appendChild(agentDiv);
+                }
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+
+        async function loadAgentSelects() {
+            try {
+                const response = await fetch('/api/agents');
+                const agents = await response.json();
+                
+                const select1 = document.getElementById('agentSelect1');
+                const select2 = document.getElementById('agentSelect2');
+                
+                select1.innerHTML = '<option value="">Select an agent...</option>';
+                select2.innerHTML = '<option value="">Select an agent...</option>';
+                
+                for (const [agentId, agent] of Object.entries(agents)) {
+                    const option1 = document.createElement('option');
+                    option1.value = agentId;
+                    option1.textContent = `${agentId} (${agent.folder})`;
+                    select1.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = agentId;
+                    option2.textContent = `${agentId} (${agent.folder})`;
+                    select2.appendChild(option2);
+                }
+            } catch (error) {
+                console.error('Error loading agent selects:', error);
+            }
+        }
+
+        function selectAgent(agentId, agentData, element) {
+            // Remove previous selection
+            document.querySelectorAll('.agent-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selection to clicked item
+            element.classList.add('selected');
+            selectedAgent = agentId;
+            selectedAgentData = agentData;
+            
+            // Clear call selection
+            selectedCallIndex = null;
+            selectedCallData = null;
+            
+            // Load calls for this agent
+            loadCalls(agentId);
+        }
+
+        async function loadCalls(agentId) {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/calls`);
+                const calls = await response.json();
+                
+                const callTable = document.getElementById('callTable');
+                callTable.innerHTML = '';
+                
+                calls.forEach((call, index) => {
+                    const row = document.createElement('tr');
+                    row.style.cursor = 'pointer';
+                    row.onclick = () => selectCall(index, call, row);
+                    row.innerHTML = `
+                        <td>${index + 1}</td> <td>${call.phone}</td>
+                        <td>${call.duration}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); editCallAtIndex(${index}, ${JSON.stringify(call).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
+                            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteCallAtIndex(${index})" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                        </td>
+                    `;
+                    callTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading calls:', error);
+            }
+        }
+
+        function selectCall(index, callData, element) {
+            // Remove previous selection
+            document.querySelectorAll('#callTable tr').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            // Add selection to clicked row
+            element.classList.add('selected');
+            selectedCallIndex = index;
+            selectedCallData = callData;
+        }
+
+        // Modal functions
+        function showAgentModal(agent = null) {
+            editingAgent = agent !== null;
+            document.getElementById('modalAgentId').value = agent ? agent.id : '';
+            document.getElementById('modalFolder').value = agent ? agent.folder : '';
+            document.getElementById('modalLocatorId').value = agent ? agent.locator_id : '';
+            
+            document.getElementById('agentModal').style.display = 'block';
+        }
+
+        function showCallModal(call = null) {
+            if (!selectedAgent && !call) {
+                alert('Please select an agent first');
+                return;
+            }
+            
+            editingCall = call !== null;
+            document.getElementById('modalPhone').value = call ? call.phone : '';
+            document.getElementById('modalDuration').value = call ? call.duration : '';
+            document.getElementById('callModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            editingAgent = false;
+            editingCall = false;
+        }
+
+        async function saveAgent() {
+            const agentId = document.getElementById('modalAgentId').value;
+            const folder = document.getElementById('modalFolder').value;
+            const locatorId = document.getElementById('modalLocatorId').value;
+            
+            if (!agentId || !folder || !locatorId) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('agent_id', agentId);
+            formData.append('folder', folder);
+            formData.append('locator_id', locatorId);
+            
+            try {
+                let url = '/api/agents';
+                let method = 'POST';
+                
+                if (editingAgent) {
+                    url = `/api/agents/${selectedAgent}`;
+                    method = 'PUT';
+                }
+                
+                console.log('Saving agent:', method, url, 'Data:', {agentId, folder, locatorId});
+                
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Agent save response:', result);
+                    closeModal('agentModal');
+                    loadAgents();
+                    loadAgentSelects();
+                    
+                    if (editingAgent) {
+                        // Update selected agent data - use new agent ID if it changed
+                        selectedAgent = result.new_agent_id || agentId;
+                        selectedAgentData = {id: agentId, folder: folder, locator_id: locatorId};
+                        // Reload calls for the (possibly new) agent ID
+                        loadCalls(selectedAgent);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Agent save error:', response.status, errorText);
+                    alert('Error saving agent: ' + response.status + ' - ' + errorText);
+                }
+            } catch (error) {
+                console.error('Agent save exception:', error);
+                alert('Error saving agent: ' + error.message);
+            }
+        }
+
+        async function saveCall() {
+            if (!selectedAgent && !editingCall) {
+                alert('Please select an agent first');
+                return;
+            }
+            
+            const phone = document.getElementById('modalPhone').value;
+            const duration = document.getElementById('modalDuration').value;
+            
+            if (!phone || !duration) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('phone', phone);
+            formData.append('duration', duration);
+            
+            try {
+                let url = `/api/agents/${selectedAgent}/calls`;
+                let method = 'POST';
+                
+                if (editingCall && selectedCallIndex !== null) {
+                    url = `/api/agents/${selectedAgent}/calls/${selectedCallIndex}`;
+                    method = 'PUT';
+                }
+                
+                console.log('Saving call:', method, url, 'Phone:', phone, 'Duration:', duration);
+                
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Call save response:', result);
+                    closeModal('callModal');
+                    loadCalls(selectedAgent);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Call save error:', response.status, errorText);
+                    alert('Error saving call: ' + response.status + ' - ' + errorText);
+                }
+            } catch (error) {
+                console.error('Call save exception:', error);
+                alert('Error saving call: ' + error.message);
+            }
+        }
+
+        function editAgent(agentId, agentData) {
+            // This function prepares the modal for editing a specific agent
+            selectedAgent = agentId;
+            selectedAgentData = agentData;
+            showAgentModal(agentData);
+        }
+
+        async function deleteAgent(agentId) { // Now accepts agentId directly
+            if (!agentId) {
+                alert('Agent ID not provided.');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to delete agent ${agentId} and all their calls?`)) {
+                try {
+                    const response = await fetch(`/api/agents/${agentId}`, { // Use the passed agentId
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        // If the deleted agent was the selected one, clear the selections
+                        if (selectedAgent === agentId) {
+                            selectedAgent = null;
+                            selectedAgentData = null;
+                            document.getElementById('callTable').innerHTML = '';
+                        }
+                        loadAgents();
+                        loadAgentSelects();
+                    } else {
+                        const errorText = await response.text();
+                        alert('Error deleting agent: ' + errorText);
+                    }
+                } catch (error) {
+                    alert('Error deleting agent: ' + error.message);
+                }
+            }
+        }
+        
+        async function deleteAllAgents() {
+            if (confirm('ARE YOU SURE? This will delete ALL agents and their associated calls. This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/agents', {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        // Clear everything from the UI
+                        selectedAgent = null;
+                        selectedAgentData = null;
+                        document.getElementById('callTable').innerHTML = '';
+                        loadAgents();
+                        loadAgentSelects();
+                        alert('All agents have been deleted.');
+                    } else {
+                        const errorText = await response.text();
+                        alert('Error deleting all agents: ' + errorText);
+                    }
+                } catch (error) {
+                    alert('Error deleting all agents: ' + error.message);
+                }
+            }
+        }
+
+        function editCallAtIndex(index, callData) {
+            selectedCallIndex = index;
+            selectedCallData = callData;
+            showCallModal(callData);
+        }
+
+        async function deleteCallAtIndex(index) {
+            if (!selectedAgent) return;
+            
+            if (confirm('Are you sure you want to delete this call?')) {
+                try {
+                    const response = await fetch(`/api/agents/${selectedAgent}/calls/${index}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        loadCalls(selectedAgent);
+                        // Clear selection if we deleted the selected call
+                        if (selectedCallIndex === index) {
+                            selectedCallIndex = null;
+                            selectedCallData = null;
+                        }
+                    }
+                } catch (error) {
+                    alert('Error deleting call: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteAllCalls() {
+            if (!selectedAgent) {
+                alert('Please select an agent first.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ALL calls for agent "${selectedAgent}"? This cannot be undone.`)) {
+                try {
+                    const response = await fetch(`/api/agents/${selectedAgent}/calls`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        // Refresh the call list to show it's empty
+                        loadCalls(selectedAgent);
+                    } else {
+                        const errorText = await response.text();
+                        alert('Error deleting all calls: ' + errorText);
+                    }
+                } catch (error) {
+                    alert('Error deleting all calls: ' + error.message);
+                }
+            }
+        }
+
+        async function uploadExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`Upload successful!\nAgents created: ${result.agents_created}\nCalls added: ${result.calls_added}`);
+                    loadAgents();
+                    loadAgentSelects();
+                    // Refresh current agent's calls if one is selected
+                    if (selectedAgent) {
+                        loadCalls(selectedAgent);
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('Upload failed: ' + error.detail);
+                }
+            } catch (error) {
+                alert('Error uploading file: ' + error.message);
+            }
+            
+            fileInput.value = '';
+        }
+
+        function downloadTemplate() {
+            window.location.href = '/api/download-template';
+        }
+
+        async function startAutomation(type) {
+            // Get credentials from the browser's local storage
+            const portal = localStorage.getItem('livevox_portal');
+            const username = localStorage.getItem('livevox_username');
+            const password = localStorage.getItem('livevox_password');
+
+            // Check if credentials were saved on the Hub page
+            if (!portal || !username || !password) {
+                alert('Credentials not found. Please return to the Hub page to set your LiveVox credentials.');
+                return;
+            }
+            
+            // Get the rest of the configuration from the active tab
+            const agentSelect = document.getElementById(`agentSelect${type === 'specific' ? '1' : '2'}`);
+            const startDate = document.getElementById(`startDate${type === 'specific' ? '1' : '2'}`);
+            
+            let phoneNumbers = '';
+            if (type === 'all') {
+                phoneNumbers = document.getElementById('phoneNumbers').value;
+                if (!phoneNumbers.trim()) {
+                    alert('Please enter phone numbers for All Calls mode');
+                    return;
+                }
+            }
+            
+            if (!agentSelect.value || !startDate.value) {
+                alert('Please fill in all required configuration fields');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('function_type', type === 'specific' ? 'specific_calls' : 'all_calls');
+            formData.append('agent_id', agentSelect.value);
+            formData.append('start_date', startDate.value);
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('url', portal);
+            if (phoneNumbers) {
+                formData.append('phone_numbers', phoneNumbers);
+            }
+            
+            // The rest of the function (fetch, progress polling, etc.) remains the same...
+            try {
+                const response = await fetch('/api/automation/start', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    currentTaskId = result.task_id;
+                    showProgress();
+                    startProgressPolling();
+                } else {
+                    let errorMessage = 'Unknown error starting automation.';
+                    try {
+                        const error = await response.json();
+                        if (error.detail) {
+                            errorMessage = Array.isArray(error.detail) ? error.detail.map(e => `${e.loc.join('.')} - ${e.msg}`).join('\n') : error.detail;
+                        }
+                    } catch (e) {
+                        errorMessage = await response.text();
+                    }
+                    alert('Error starting automation:\n' + errorMessage);
+                }
+            } catch (error) {
+                alert('Network error starting automation: ' + error.message);
+            }
+        }
+
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Reset smooth progress animation
+            currentProgressDisplay = 0.0;
+            targetProgressValue = 0.0;
+            
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0.0%';
+            progressFill.classList.add('pulsing');
+            
+            // Clear log content and add initial message
+            const logContent = document.getElementById('logContent');
+            logContent.innerHTML = '';
+            
+            const initialLog = document.createElement('div');
+            initialLog.textContent = 'Starting automation...';
+            logContent.appendChild(initialLog);
+            
+            lastLogMessage = 'Starting automation...';
+            
+            // Start smooth animation
+            startSmoothAnimation();
+        }
+
+        function startProgressPolling() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            progressInterval = setInterval(async () => {
+                if (!currentTaskId) return;
+                
+                try {
+                    const response = await fetch(`/api/automation/${currentTaskId}/status`);
+                    if (response.ok) {
+                        const status = await response.json();
+                        updateProgress(status.progress, status.message);
+                        
+                        if (status.status === 'completed') {
+                            clearInterval(progressInterval);
+                            
+                            // STOP THE SMOOTH ANIMATION ON COMPLETION
+                            if (animationTimer) {
+                                clearInterval(animationTimer);
+                                animationTimer = null;
+                            }
+                            
+                            targetProgressValue = 100.0;
+                            
+                            // Set final state
+                            const progressFill = document.getElementById('progressFill');
+                            progressFill.style.width = '100%';
+                            progressFill.textContent = '100.0%';
+                            progressFill.classList.remove('pulsing');
+                            
+                            updateProgress(100, "Automation completed! Preparing ZIP download...");
+                            
+                            // Trigger ZIP download
+                            setTimeout(() => {
+                                window.location.href = `/api/automation/${currentTaskId}/download`;
+                                currentTaskId = null;
+                                
+                                updateProgress(100, "✅ Download started! Check your browser downloads.");
+                                
+                                // Hide stop button since automation is done
+                                const stopBtn = document.querySelector('.btn-danger');
+                                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                    stopBtn.style.display = 'none';
+                                }
+                            }, 1000);
+                            
+                        } else if (status.status === 'failed') {
+                            clearInterval(progressInterval);
+                            
+                            // STOP THE SMOOTH ANIMATION ON FAILURE
+                            if (animationTimer) {
+                                clearInterval(animationTimer);
+                                animationTimer = null;
+                            }
+                            
+                            currentTaskId = null;
+                            currentProgressDisplay = 0.0;
+                            targetProgressValue = 0.0;
+                            
+                            const progressFill = document.getElementById('progressFill');
+                            progressFill.style.width = '0%';
+                            progressFill.textContent = '0.0%';
+                            progressFill.classList.remove('pulsing');
+                            
+                            updateProgress(0, "❌ Automation failed: " + status.message);
+                            
+                            // Hide stop button since automation is done
+                            const stopBtn = document.querySelector('.btn-danger');
+                            if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                stopBtn.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 1000);
+        }
+
+        function updateProgress(progress, message) {
+            // Set the target for smooth animation instead of direct update
+            targetProgressValue = parseFloat(progress);
+            
+            const logContent = document.getElementById('logContent');
+            
+            // Only add to log if message is different from last one
+            if (message !== lastLogMessage) {
+                const timestamp = new Date().toLocaleTimeString();
+                
+                // Create a new div for each log entry to ensure proper line breaks
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                logContent.appendChild(logEntry);
+                
+                // Keep only last 50 log entries to prevent memory issues
+                while (logContent.children.length > 50) {
+                    logContent.removeChild(logContent.firstChild);
+                }
+                
+                logContent.scrollTop = logContent.scrollHeight;
+                lastLogMessage = message;
+            }
+        }
+
+        async function stopAutomation() {
+            if (currentTaskId) {
+                try {
+                    // Call the backend to actually stop the automation
+                    const response = await fetch(`/api/automation/${currentTaskId}/stop`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Automation stopped:', result.message);
+                    } else {
+                        console.error('Failed to stop automation on backend');
+                    }
+                } catch (error) {
+                    console.error('Error stopping automation:', error);
+                }
+                
+                // Clean up frontend regardless of backend response
+                currentTaskId = null;
+                clearInterval(progressInterval);
+                
+                // STOP THE SMOOTH ANIMATION
+                if (animationTimer) {
+                    clearInterval(animationTimer);
+                    animationTimer = null;
+                }
+                
+                // Reset progress display
+                currentProgressDisplay = 0.0;
+                targetProgressValue = 0.0;
+                
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = '0%';
+                progressFill.textContent = '0.0%';
+                progressFill.classList.remove('pulsing');
+                
+                updateProgress(0, "🛑 Automation stopped by user");
+                
+                // Hide the stop button
+                const stopBtn = document.querySelector('.btn-danger');
+                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                    stopBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                editingAgent = false;
+                editingCall = false;
+            }
+        }
+
+        // Add CSS for selected table rows
+        const style = document.createElement('style');
+        style.textContent = `
+            #callTable tr.selected {
+                background-color: #000000 !important;
+                color: #ffffff !important;
+            }
+            #callTable tr.selected:hover {
+                background-color: #333333 !important;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
