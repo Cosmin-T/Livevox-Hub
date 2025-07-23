@@ -45,6 +45,7 @@ pyqt6-tools==6.4.2.3.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 python-multipart==0.0.20
+pydub==0.25.1
 pytz==2025.2
 qt6-applications==6.4.3.2.3
 qt6-tools==6.4.3.1.3

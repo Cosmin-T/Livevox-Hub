@@ -188,3 +188,6 @@ CLAUDE
 # Chrome Data
 **/chrome-data/
 **streamlit/
+# **templates/
+**tasks/
+**claude/

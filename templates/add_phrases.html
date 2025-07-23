@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveVox Add Phrases</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 20px;
+            border-right: 1px solid #cccccc;
+        }
+
+        .sidebar h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333333;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 0;
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid #333333;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #ffffff;
+            color: #000000;
+            padding-left: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+
+        .section {
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #cccccc;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cccccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: #000000;
+            border-color: #000000;
+        }
+
+        .btn-secondary:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .btn-danger {
+            background-color: #ffffff;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #cccccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: border-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-area:hover {
+            border-color: #000000;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #000000;
+            background-color: #f9f9f9;
+        }
+
+        /* Progress bar styles - matching existing projects */
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 32px;
+            background-color: #f0f0f0;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #cccccc;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #333333 0%, #555555 50%, #333333 100%);
+            width: 0%;
+            transition: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-fill.pulsing::before {
+            animation: shimmer 1.5s infinite;
+        }
+
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .log-container div {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+        }
+
+        .operation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .operation-card {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .operation-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .operation-card p {
+            color: #666666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .csv-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            background-color: #ffffff;
+            margin-top: 15px;
+        }
+
+        .csv-preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .csv-preview-table th {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #000000;
+        }
+
+        .csv-preview-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eeeeee;
+            vertical-align: top;
+        }
+
+        .csv-preview-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .csv-preview-table tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .phrase-name {
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .phrase-verbiage {
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+
+        .phrase-description {
+            max-width: 150px;
+            word-wrap: break-word;
+            color: #666666;
+        }
+
+        .csv-summary {
+            background-color: #e3f2fd;
+            border: 2px solid #1976d2;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .csv-summary-text {
+            color: #1976d2;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .operation-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1>LiveVox Add Phrases</h1>
+            <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146zM12 14H9.5a.5.5 0 0 0-.5.5v.5H12v-.5a.5.5 0 0 0-.5-.5z"/>
+                    <path d="M15.5 8.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5z"/>
+                    <path fill-rule="evenodd" d="M11.854 3.146a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L11.5 4.207V6.5a.5.5 0 0 0 1 0V3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h2.293z"/>
+                </svg>
+                Back to Hub
+            </a>
+            
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Add Phrases Automation - LiveVox</h1>
+            </div>
+
+            <!-- LiveVox URL Section -->
+            <div class="section">
+                <h2>1. LiveVox Phrases URL</h2>
+                <p style="color: #666666; margin-bottom: 20px;">
+                    Enter the LiveVox phrases admin URL. Your credentials from the main hub will be used automatically.
+                </p>
+                
+                <div class="form-group">
+                    <label for="phrasesUrl">LiveVox Phrases URL:</label>
+                    <input type="url" id="phrasesUrl" placeholder="e.g., https://portal.na6.livevox.com/BII_1/admin/phrases">
+                </div>
+            </div>
+
+            <!-- WAV File Upload Section -->
+            <div class="section">
+                <h2>2. Upload & Convert Audio Files</h2>
+                <p style="color: #666666; margin-bottom: 20px;">
+                    Upload multiple WAV/M4A files to convert them to org_.wav format for LiveVox.
+                </p>
+                
+                <div id="audioUploadAlert"></div>
+                
+                <div class="file-upload-area" id="multiFileUploadArea" onclick="document.getElementById('multiWavFiles').click();">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#cccccc" viewBox="0 0 16 16" style="margin-bottom: 15px;">
+                        <path d="M6.5 11.5a.5.5 0 0 1-1 0V7.618a1 1 0 0 0-.553-.894L4.553 6a1 1 0 0 0-.894 0L3.553 6.724A1 1 0 0 0 3 7.618V11.5a.5.5 0 0 1-1 0V7.618a2 2 0 0 1 1.106-1.789l.394-.211a2 2 0 0 1 1.789 0l.394.211A2 2 0 0 1 6.5 7.618V11.5z"/>
+                        <path d="M9 7a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V8.707L7.854 9.354a.5.5 0 1 1-.708-.708l1.5-1.5A.5.5 0 0 1 9 7z"/>
+                        <path d="M13.5 7.5a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V8h-1v3.5a.5.5 0 0 1-1 0V8a1 1 0 0 1 1-1h1.5z"/>
+                    </svg>
+                    <p><strong>Click to select multiple audio files</strong> or drag and drop here</p>
+                    <p style="color: #999999; font-size: 12px; margin-top: 10px;">Supported formats: All audio formats (mp3, wav, m4a, aac, flac, etc.)</p>
+                </div>
+                <input type="file" id="multiWavFiles" name="multiWavFiles" accept="audio/*" multiple style="display: none;">
+                
+                <div id="conversionProgress" style="display: none; margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px;">Converting Audio Files...</h3>
+                    <div id="conversionList"></div>
+                </div>
+                
+                <div id="convertedFilesList" style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px;">Available Converted Files:</h3>
+                    <div id="convertedFilesContent">
+                        <p style="color: #666666;">No converted files available. Upload files above to convert them.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phrase Management Table Section -->
+            <div class="section">
+                <h2>3. Manage Phrases</h2>
+                <p style="color: #666666; margin-bottom: 20px;">
+                    Add and edit phrases in the table below. Select phrases and choose operation below.
+                </p>
+                
+                <div id="phraseTableContainer" style="overflow-x: auto;">
+                    <table id="phraseTable" class="csv-preview-table" style="width: 100%; min-width: 800px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                </th>
+                                <th style="width: 150px;">Phrase Name</th>
+                                <th style="width: 250px;">Verbiage</th>
+                                <th style="width: 150px;">Description</th>
+                                <th style="width: 150px;">WAV File</th>
+                                <th style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="phraseTableBody">
+                            <!-- Input row for adding new phrases -->
+                            <tr id="addPhraseRow" style="background-color: #f8f9fa;">
+                                <td>➕</td>
+                                <td>
+                                    <input type="text" id="newPhraseName" placeholder="Enter phrase name..." 
+                                           style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">
+                                </td>
+                                <td>
+                                    <textarea id="newPhraseVerbiage" placeholder="Enter phrase text..." 
+                                              style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px; resize: vertical;" rows="2"></textarea>
+                                </td>
+                                <td>
+                                    <input type="text" id="newPhraseDescription" placeholder="Enter description..." 
+                                           style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">
+                                </td>
+                                <td>
+                                    <select id="newPhraseWavFile" style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">
+                                        <option value="">No audio file</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn" onclick="addPhraseFromInputs()" 
+                                            style="padding: 5px 10px; font-size: 12px;">Add</button>
+                                </td>
+                            </tr>
+                            <!-- Existing phrases will be added below -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Batch Operations Section -->
+            <div class="section">
+                <h2>4. Batch Operations</h2>
+                <p style="color: #666666; margin-bottom: 20px;">
+                    Select phrases from the table above and choose an operation to perform on them.
+                </p>
+                
+                <div id="operationAlert"></div>
+                
+                <div class="operation-cards">
+                    <div class="operation-card">
+                        <h3>Generate TTS for Selected</h3>
+                        <p>Adds selected phrases to LiveVox and generates TTS files for Bob, Julie, and Juanita voices.</p>
+                        <button class="btn" onclick="startBatchOperation('add_phrases')" id="batchTtsBtn" disabled>
+                            Generate TTS for Selected
+                        </button>
+                    </div>
+                    
+                    <div class="operation-card">
+                        <h3>Upload Audio for Selected</h3>
+                        <p>Adds selected phrases to LiveVox and uploads their assigned WAV files.</p>
+                        <button class="btn" onclick="startBatchOperation('upload_sound')" id="batchAudioBtn" disabled>
+                            Upload Audio for Selected
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="selectedPhrasesInfo" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; display: none;">
+                    <strong>Selected Phrases:</strong> <span id="selectedCount">0</span>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-container" id="progressContainer">
+                <h3 style="margin-bottom: 15px;">Automation Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <div class="log-container" id="logContainer">
+                    <div id="logContent">
+                        <!-- Log entries will be added here dynamically -->
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="stopAutomation()" id="stopBtn">
+                    Stop Automation
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTaskId = null;
+        let progressInterval = null;
+        let uploadedPhraseId = null;
+
+        // SMOOTH PROGRESS ANIMATION VARIABLES - HCI STYLE
+        let currentProgressDisplay = 0.0; 
+        let targetProgressValue = 0.0;
+        let animationTimer = null;
+        let automationStartTime = null;
+
+        function startSmoothAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+            }
+            
+            animationTimer = setInterval(animateProgress, 50); // 50ms for smooth animation
+        }
+
+        function animateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            
+            // Stop the timer only when the job is done and we've reached 100%
+            if (targetProgressValue >= 100 && currentProgressDisplay >= 100) {
+                clearInterval(animationTimer);
+                currentProgressDisplay = 100.0;
+                progressFill.style.width = '100%';
+                progressFill.textContent = '100.0%';
+                progressFill.classList.remove('pulsing');
+                return;
+            }
+
+            // If we are behind the target, move faster to catch up.
+            if (currentProgressDisplay < targetProgressValue) {
+                // Move by a fraction of the remaining distance for a smooth, elastic feel
+                let increment = (targetProgressValue - currentProgressDisplay) * 0.04;
+                // Ensure a minimum "catch up" speed
+                if (increment < 0.1) {
+                    increment = 0.1;
+                }
+                currentProgressDisplay += increment;
+            } 
+            // If we have reached the target, but the final target isn't 100 yet, keep moving forward very slowly.
+            else if (targetProgressValue < 100) {
+                currentProgressDisplay += 0.01; // This is the "never stop" part
+            }
+
+            // Don't let the animation go past 99.9 until the final "finished" signal
+            if (currentProgressDisplay > 99.9 && targetProgressValue < 100) {
+                currentProgressDisplay = 99.9;
+            }
+            
+            // Update the UI
+            progressFill.style.width = `${currentProgressDisplay}%`;
+            progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+        }
+
+        // Global variables for table management
+        let currentTableRows = [];
+        let convertedAudioFiles = [];
+        
+        // Load credentials from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCredentials(); 
+            setupMultiFileUpload();
+            loadConvertedFiles();
+            initializePhraseTable();
+        });
+
+        function loadCredentials() {
+            const url = localStorage.getItem('livevox_portal');
+
+            if (url) {
+                // Convert from main portal URL to phrases URL
+                if (url.includes('/BII_1')) {
+                    document.getElementById('phrasesUrl').value = url + '#configure/phraseEditor';
+                } else if (url.includes('/CADEX_2')) {
+                    document.getElementById('phrasesUrl').value = url + '#configure/phraseEditor';
+                } else {
+                    document.getElementById('phrasesUrl').value = url + '#configure/phraseEditor';
+                }
+            }
+        }
+
+        // Multi-file Upload Setup
+        function setupMultiFileUpload() {
+            const fileInput = document.getElementById('multiWavFiles');
+            const uploadArea = document.getElementById('multiFileUploadArea');
+
+            // File input change
+            fileInput.addEventListener('change', handleMultiFileSelect);
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleMultiFileSelect();
+                }
+            });
+        }
+
+        // Handle multiple file selection for batch conversion
+        async function handleMultiFileSelect() {
+            const fileInput = document.getElementById('multiWavFiles');
+            const files = Array.from(fileInput.files);
+            
+            console.log(`Selected ${files.length} files:`, files.map(f => f.name));
+            
+            if (files.length === 0) {
+                console.log('No files selected');
+                return;
+            }
+
+            // Validate file types - accept all audio formats
+            const audioExtensions = ['.wav', '.m4a', '.mp3', '.aac', '.flac', '.ogg', '.wma', '.m4p', '.3gp', '.amr'];
+            const invalidFiles = files.filter(file => {
+                const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                const isAudio = audioExtensions.includes(fileExt) || file.type.startsWith('audio/');
+                return !isAudio;
+            });
+            
+            if (invalidFiles.length > 0) {
+                showAudioAlert(`Non-audio files detected: ${invalidFiles.map(f => f.name).join(', ')}. Please select only audio files.`, 'error');
+                fileInput.value = '';
+                return;
+            }
+
+            // Start batch conversion
+            showAudioAlert(`Starting conversion of ${files.length} files...`, 'success');
+            await convertMultipleFiles(files);
+        }
+
+        // Batch file conversion function
+        async function convertMultipleFiles(files) {
+            const progressDiv = document.getElementById('conversionProgress');
+            const listDiv = document.getElementById('conversionList');
+            
+            progressDiv.style.display = 'block';
+            listDiv.innerHTML = '';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileDiv = document.createElement('div');
+                fileDiv.style.marginBottom = '10px';
+                fileDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span>${file.name}</span>
+                        <div id="status_${i}" style="color: #666;">Converting...</div>
+                    </div>
+                `;
+                listDiv.appendChild(fileDiv);
+                
+                try {
+                    console.log(`Converting file ${i + 1}/${files.length}: ${file.name}`);
+                    
+                    const formData = new FormData();
+                    formData.append('audio_file', file);
+                    
+                    const response = await fetch('/api/phrases/convert-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    console.log(`Conversion result for ${file.name}:`, result);
+                    
+                    if (response.ok) {
+                        document.getElementById(`status_${i}`).innerHTML = `<span style="color: green;">✓ Converted to ${result.converted_file.filename}</span>`;
+                        convertedAudioFiles.push(result.converted_file);
+                        console.log(`Successfully converted: ${file.name} -> ${result.converted_file.filename}`);
+                    } else {
+                        document.getElementById(`status_${i}`).innerHTML = `<span style="color: red;">✗ Failed: ${result.detail}</span>`;
+                        console.error(`Conversion failed for ${file.name}:`, result.detail);
+                    }
+                } catch (error) {
+                    document.getElementById(`status_${i}`).innerHTML = `<span style="color: red;">✗ Error: ${error.message}</span>`;
+                    console.error(`Error converting ${file.name}:`, error);
+                }
+            }
+            
+            showAudioAlert(`Conversion completed. ${convertedAudioFiles.length} files converted successfully.`, 'success');
+            loadConvertedFiles();
+        }
+        
+        function showPhrasePreview(result) {
+            const preview = document.getElementById('phrasePreview');
+            const content = document.getElementById('phrasePreviewContent');
+            
+            preview.style.display = 'block';
+            
+            // Create preview table for the added phrase
+            let tableHTML = `
+                <table class="csv-preview-table">
+                    <thead>
+                        <tr>
+                            <th>Phrase Name</th>
+                            <th>Verbiage</th>
+                            <th>Description</th>
+                            <th>Audio File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="phrase-name">${result.phrase_data.phrase_name}</td>
+                            <td class="phrase-verbiage">${result.phrase_data.verbiage}</td>
+                            <td class="phrase-description">${result.phrase_data.description || 'N/A'}</td>
+                            <td>${result.converted_file || 'TTS will be generated'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            
+            content.innerHTML = tableHTML;
+        }
+
+        function enableAutomationButtons() {
+            document.getElementById('addPhrasesBtn').disabled = false;
+            document.getElementById('uploadSoundBtn').disabled = false;
+        }
+
+        function disableAutomationButtons() {
+            document.getElementById('addPhrasesBtn').disabled = true;
+            document.getElementById('uploadSoundBtn').disabled = true;
+            uploadedPhraseId = null;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('uploadAlert');
+            alertDiv.innerHTML = `<div class="alert alert-${type === 'error' ? 'error' : 'success'}">${message}</div>`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+
+        async function startPhrasesAutomation(operationType) {
+            if (operationType !== 'convert_files' && !uploadedPhraseId) {
+                showAlert('Please add a phrase first.', 'error');
+                return;
+            }
+
+            const url = document.getElementById('phrasesUrl').value;
+            const username = localStorage.getItem('livevox_username');
+            const password = localStorage.getItem('livevox_password');
+
+            if (!url) {
+                showAlert('Please enter the LiveVox phrases URL.', 'error');
+                return;
+            }
+
+            if (!username || !password) {
+                showAlert('Please set your credentials in the main hub first.', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                formData.append('url', url);
+                formData.append('operation_type', operationType);
+                if (uploadedPhraseId) {
+                    formData.append('phrase_id', uploadedPhraseId);
+                }
+
+                const response = await fetch('/api/phrases/automation/start', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentTaskId = result.task_id;
+                    showProgressContainer();
+                    startProgressPolling();
+                } else {
+                    throw new Error(result.detail || 'Failed to start automation');
+                }
+            } catch (error) {
+                console.error('Error starting automation:', error);
+                showAlert(`Error starting automation: ${error.message}`, 'error');
+            }
+        }
+
+        function showProgressContainer() {
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Reset smooth progress animation
+            currentProgressDisplay = 0.0;
+            targetProgressValue = 0.0;
+            automationStartTime = new Date(); // Track automation start time
+            
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0.0%';
+            progressFill.classList.add('pulsing');
+            
+            // Clear log content and add initial message (without timestamp like HCI)
+            const logContent = document.getElementById('logContent');
+            logContent.innerHTML = '';
+            
+            const initialLog = document.createElement('div');
+            initialLog.textContent = 'Starting automation...';
+            logContent.appendChild(initialLog);
+            
+            // Start smooth animation
+            startSmoothAnimation();
+            
+            // Scroll to progress container
+            document.getElementById('progressContainer').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        function startProgressPolling() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
+            progressInterval = setInterval(async () => {
+                if (!currentTaskId) return;
+
+                try {
+                    const response = await fetch(`/api/automation/${currentTaskId}/status`);
+                    const status = await response.json();
+
+                    updateProgress(status.progress, status.message);
+                    
+                    if (status.log_messages && status.log_messages.length > 0) {
+                        updateLogMessages(status.log_messages);
+                    }
+
+                    if (status.status === 'completed') {
+                        clearInterval(progressInterval);
+                        targetProgressValue = 100.0;
+                        updateProgress(100, "Automation completed successfully!");
+                        
+                        // Allow animation to complete naturally
+                        setTimeout(() => {
+                            currentTaskId = null;
+                        }, 1000);
+                        
+                    } else if (status.status === 'error') {
+                        clearInterval(progressInterval);
+                        currentTaskId = null;
+                        const timestamp = new Date().toLocaleTimeString();
+                        const runningTime = getRunningTime();
+                        addLogMessage(`[${timestamp}] Error: ${status.message} (Running ${runningTime})`);
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 1000);
+        }
+
+        function getRunningTime() {
+            if (!automationStartTime) return '0m';
+            const elapsed = Math.floor((new Date() - automationStartTime) / 60000); // minutes
+            return `${elapsed}m`;
+        }
+
+        function updateProgress(progress, message) {
+            // Set the target for smooth animation instead of direct update
+            targetProgressValue = parseFloat(progress);
+            
+            if (message) {
+                // Format message like HCI: timestamp + message + running time
+                const timestamp = new Date().toLocaleTimeString();
+                const runningTime = getRunningTime();
+                addLogMessage(`[${timestamp}] ${message} (Running ${runningTime})`);
+            }
+        }
+
+        function updateLogMessages(messages) {
+            const logContent = document.getElementById('logContent');
+            
+            // Clear existing content and add new messages with timestamps and running time
+            logContent.innerHTML = '';
+            
+            // Add initial message without timestamp
+            const initialLog = document.createElement('div');
+            initialLog.textContent = 'Starting automation...';
+            logContent.appendChild(initialLog);
+            
+            // Add backend messages with timestamp and running time
+            messages.forEach(msg => {
+                const timestamp = new Date().toLocaleTimeString();
+                const runningTime = getRunningTime();
+                const div = document.createElement('div');
+                div.textContent = `[${timestamp}] ${msg} (Running ${runningTime})`;
+                logContent.appendChild(div);
+            });
+            
+            // Keep only last 50 log entries to prevent memory issues
+            while (logContent.children.length > 50) {
+                logContent.removeChild(logContent.firstChild);
+            }
+            
+            // Auto-scroll to bottom
+            const logContainer = document.getElementById('logContainer');
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function addLogMessage(message) {
+            const logContent = document.getElementById('logContent');
+            
+            const div = document.createElement('div');
+            div.textContent = message; // Message already formatted with timestamp and running time
+            logContent.appendChild(div);
+            
+            // Keep only last 50 log entries to prevent memory issues
+            while (logContent.children.length > 50) {
+                logContent.removeChild(logContent.firstChild);
+            }
+            
+            // Auto-scroll to bottom
+            const logContainer = document.getElementById('logContainer');
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Saved Phrases Functions
+        async function loadSavedPhrases() {
+            try {
+                const response = await fetch('/api/phrases/list');
+                const result = await response.json();
+                
+                if (response.ok) {
+                    populateSavedPhrasesDropdown(result.phrases);
+                } else {
+                    console.error('Failed to load saved phrases:', result.detail);
+                }
+            } catch (error) {
+                console.error('Error loading saved phrases:', error);
+            }
+        }
+        
+        function populateSavedPhrasesDropdown(phrases) {
+            const select = document.getElementById('savedPhrasesSelect');
+            
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            // Add phrases to dropdown
+            phrases.forEach(phrase => {
+                const option = document.createElement('option');
+                option.value = phrase.id;
+                option.textContent = `${phrase.phrase_name} (${phrase.created_at.split('T')[0]})`;
+                select.appendChild(option);
+            });
+            
+            // Setup change handler
+            select.addEventListener('change', function() {
+                const phraseId = this.value;
+                if (phraseId) {
+                    showSavedPhrasePreview(phrases.find(p => p.id === phraseId));
+                    document.getElementById('loadPhraseBtn').disabled = false;
+                } else {
+                    document.getElementById('savedPhrasePreview').style.display = 'none';
+                    document.getElementById('savedAudioGroup').style.display = 'none';
+                    document.getElementById('loadPhraseBtn').disabled = true;
+                }
+            });
+        }
+        
+        function showSavedPhrasePreview(phrase) {
+            const preview = document.getElementById('savedPhrasePreview');
+            const content = document.getElementById('savedPhraseContent');
+            const audioGroup = document.getElementById('savedAudioGroup');
+            const audioSelect = document.getElementById('savedAudioSelect');
+            
+            // Show phrase details
+            content.innerHTML = `
+                <p><strong>Name:</strong> ${phrase.phrase_name}</p>
+                <p><strong>Verbiage:</strong> ${phrase.verbiage}</p>
+                <p><strong>Description:</strong> ${phrase.description || 'None'}</p>
+                <p><strong>Has Audio:</strong> ${phrase.wav_org_file ? 'Yes (' + phrase.wav_org_file.filename + ')' : 'No'}</p>
+            `;
+            
+            // Setup audio dropdown if phrase has audio
+            if (phrase.wav_org_file) {
+                audioSelect.innerHTML = `
+                    <option value="">No audio file</option>
+                    <option value="${phrase.wav_org_file.filename}">${phrase.wav_org_file.filename}</option>
+                `;
+                audioGroup.style.display = 'block';
+            } else {
+                audioGroup.style.display = 'none';
+            }
+            
+            preview.style.display = 'block';
+        }
+        
+        function loadSavedPhrase() {
+            const phraseId = document.getElementById('savedPhrasesSelect').value;
+            const audioFile = document.getElementById('savedAudioSelect').value;
+            
+            if (!phraseId) {
+                showAlert('Please select a phrase first.', 'error');
+                return;
+            }
+            
+            // Find the selected phrase
+            const phrases = Array.from(document.getElementById('savedPhrasesSelect').options)
+                .map(option => option.value).filter(val => val);
+                
+            // For now, we'll use this phrase for automation
+            // Set global variable for automation
+            uploadedPhraseId = phraseId;
+            enableAutomationButtons();
+            
+            showAlert(`Loaded phrase for automation. ${audioFile ? 'Using custom audio: ' + audioFile : 'Will use TTS generation.'}`, 'success');
+        }
+
+        async function stopAutomation() {
+            if (!currentTaskId) return;
+
+            try {
+                const response = await fetch(`/api/automation/${currentTaskId}/stop`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Automation stopped:', result.message);
+                } else {
+                    console.error('Failed to stop automation on backend');
+                }
+            } catch (error) {
+                console.error('Error stopping automation:', error);
+            }
+
+            // Clean up frontend state
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+            
+            // Reset progress display
+            currentProgressDisplay = 0.0;
+            targetProgressValue = 0.0;
+            
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0.0%';
+            progressFill.classList.remove('pulsing');
+            
+            currentTaskId = null;
+            const timestamp = new Date().toLocaleTimeString();
+            addLogMessage(`[${timestamp}] 🛑 Automation stopped by user`);
+        }
+
+        // Missing functions for audio upload and phrase management
+        function showAudioAlert(message, type) {
+            const alertDiv = document.getElementById('audioUploadAlert');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            alertDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // Load and display converted files
+        async function loadConvertedFiles() {
+            console.log('loadConvertedFiles() called');
+            try {
+                const response = await fetch('/api/phrases/converted-files');
+                console.log('API response status:', response.status);
+                
+                const result = await response.json();
+                console.log('API response data:', result);
+                
+                const contentDiv = document.getElementById('convertedFilesContent');
+                
+                if (response.ok && result.files && result.files.length > 0) {
+                    console.log('Found files:', result.files);
+                    let filesHTML = '<ul style="list-style: none; padding: 0;">';
+                    result.files.forEach(file => {
+                        filesHTML += `
+                            <li style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+                                <strong>${file.filename}</strong>
+                                <div style="font-size: 12px; color: #666;">
+                                    Original: ${file.original_name || 'Unknown'} | Size: ${file.size || 'Unknown'} bytes
+                                </div>
+                            </li>
+                        `;
+                    });
+                    filesHTML += '</ul>';
+                    contentDiv.innerHTML = filesHTML;
+                    
+                    // Update the dropdown in the phrase table
+                    updateWavFileDropdown(result.files);
+                } else {
+                    console.log('No files found or error:', result);
+                    contentDiv.innerHTML = '<p style="color: #666666;">No converted files available. Upload files above to convert them.</p>';
+                    updateWavFileDropdown([]);
+                }
+            } catch (error) {
+                console.error('Error loading converted files:', error);
+                document.getElementById('convertedFilesContent').innerHTML = '<p style="color: #ff0000;">Error loading converted files.</p>';
+            }
+        }
+
+        // Update the WAV file dropdown in the phrase table
+        function updateWavFileDropdown(files) {
+            const dropdown = document.getElementById('newPhraseWavFile');
+            if (!dropdown) return;
+            
+            // Clear existing options except the first one
+            dropdown.innerHTML = '<option value="">No audio file</option>';
+            
+            // Add converted files as options
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.filename;
+                option.textContent = file.filename;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Add phrase from input fields in the table
+        async function addPhraseFromInputs() {
+            console.log('Adding phrase from table inputs...');
+            
+            const phraseName = document.getElementById('newPhraseName').value.trim();
+            const verbiage = document.getElementById('newPhraseVerbiage').value.trim();
+            const description = document.getElementById('newPhraseDescription').value.trim();
+            const wavFile = document.getElementById('newPhraseWavFile').value;
+            
+            if (!phraseName || !verbiage) {
+                showAudioAlert('Phrase name and verbiage are required.', 'error');
+                return;
+            }
+            
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('phrase_name', phraseName);
+                formData.append('phrase_verbiage', verbiage);
+                formData.append('phrase_description', description);
+                
+                // Add converted file name if selected
+                if (wavFile) {
+                    formData.append('converted_file_name', wavFile);
+                }
+                
+                console.log('Sending phrase data:', {
+                    phrase_name: phraseName,
+                    phrase_verbiage: verbiage,
+                    phrase_description: description
+                });
+                
+                const response = await fetch('/api/phrases/add-phrase', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Add phrase result:', result);
+                
+                if (response.ok) {
+                    // Create phrase data object for table display
+                    const phraseData = {
+                        phrase_name: phraseName,
+                        verbiage: verbiage,
+                        description: description,
+                        wav_org: wavFile || null
+                    };
+                    
+                    // Add to table
+                    addPhraseToTable(phraseData, result.phrase_id);
+                    
+                    // Clear input fields
+                    document.getElementById('newPhraseName').value = '';
+                    document.getElementById('newPhraseVerbiage').value = '';
+                    document.getElementById('newPhraseDescription').value = '';
+                    document.getElementById('newPhraseWavFile').value = '';
+                    
+                    showAudioAlert(`Phrase "${phraseName}" added successfully!`, 'success');
+                } else {
+                    showAudioAlert(`Error adding phrase: ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding phrase:', error);
+                showAudioAlert(`Error adding phrase: ${error.message}`, 'error');
+            }
+        }
+
+        // Add phrase to the table display
+        function addPhraseToTable(phraseData, phraseId) {
+            const tableBody = document.querySelector('#phraseTable tbody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td><input type="checkbox" value="${phraseId}" class="phrase-checkbox"></td>
+                <td>${phraseData.phrase_name}</td>
+                <td>${phraseData.verbiage}</td>
+                <td>${phraseData.description || ''}</td>
+                <td>${phraseData.wav_org || 'TTS'}</td>
+                <td>
+                    <button type="button" class="btn" onclick="removePhraseFromTable(this, '${phraseId}')" style="background-color: #ff4444; font-size: 12px; padding: 4px 8px;">Remove</button>
+                </td>
+            `;
+            
+            // Insert before the input row
+            const inputRow = document.getElementById('addPhraseRow');
+            inputRow.parentNode.insertBefore(newRow, inputRow);
+            
+            currentTableRows.push({
+                id: phraseId,
+                data: phraseData,
+                element: newRow
+            });
+            
+            // Add event listener to checkbox to update batch buttons
+            const checkbox = newRow.querySelector('.phrase-checkbox');
+            checkbox.addEventListener('change', updateBatchButtons);
+            
+            // Update batch buttons state
+            updateBatchButtons();
+        }
+
+        // Remove phrase from table and backend storage
+        async function removePhraseFromTable(button, phraseId) {
+            console.log(`Removing phrase with ID: ${phraseId}`);
+            
+            try {
+                // First, delete from backend storage
+                const response = await fetch(`/api/phrases/${phraseId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Remove from frontend table
+                    const row = button.closest('tr');
+                    row.remove();
+                    
+                    // Remove from currentTableRows array
+                    currentTableRows = currentTableRows.filter(item => item.id !== phraseId);
+                    
+                    // Update batch buttons state
+                    updateBatchButtons();
+                    
+                    showAudioAlert('Phrase deleted successfully', 'success');
+                } else {
+                    showAudioAlert(`Error deleting phrase: ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting phrase:', error);
+                showAudioAlert(`Error deleting phrase: ${error.message}`, 'error');
+            }
+        }
+
+        // Load saved phrases from backend into table
+        async function loadSavedPhrasesIntoTable() {
+            console.log('Loading saved phrases into table...');
+            
+            try {
+                const response = await fetch('/api/phrases/list');
+                const result = await response.json();
+                
+                if (response.ok && result.phrases && result.phrases.length > 0) {
+                    console.log(`Loading ${result.phrases.length} saved phrases`);
+                    
+                    // Clear existing table rows (except input row)
+                    currentTableRows = [];
+                    const tableBody = document.getElementById('phraseTableBody');
+                    const inputRow = document.getElementById('addPhraseRow');
+                    
+                    // Remove all rows except the input row
+                    Array.from(tableBody.children).forEach(row => {
+                        if (row.id !== 'addPhraseRow') {
+                            row.remove();
+                        }
+                    });
+                    
+                    // Add each saved phrase to the table
+                    result.phrases.forEach(phrase => {
+                        const phraseData = {
+                            phrase_name: phrase.phrase_name,
+                            verbiage: phrase.verbiage,
+                            description: phrase.description || '',
+                            wav_org: phrase.wav_org_file ? phrase.wav_org_file.filename : null
+                        };
+                        
+                        addPhraseToTable(phraseData, phrase.id);
+                    });
+                    
+                    console.log(`Successfully loaded ${result.phrases.length} phrases into table`);
+                    updateBatchButtons(); // Update button states
+                } else {
+                    console.log('No saved phrases found');
+                }
+            } catch (error) {
+                console.error('Error loading saved phrases:', error);
+                showAudioAlert('Error loading saved phrases from storage.', 'error');
+            }
+        }
+
+        // Initialize the phrase table
+        function initializePhraseTable() {
+            console.log('Initializing phrase table...');
+            
+            // Load any existing converted files for the dropdown
+            loadConvertedFiles();
+            
+            // Load saved phrases into the table
+            loadSavedPhrasesIntoTable();
+            
+            // Initialize currentTableRows array
+            currentTableRows = [];
+            
+            // Set up batch operation handlers
+            const selectAllCheckbox = document.getElementById('selectAllPhrases');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.phrase-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+            
+            console.log('Phrase table initialized');
+        }
+        
+        // Toggle select all checkboxes
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const phraseCheckboxes = document.querySelectorAll('.phrase-checkbox');
+            
+            phraseCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateBatchButtons();
+        }
+        
+        // Update batch operation buttons based on selected phrases
+        function updateBatchButtons() {
+            const selectedCheckboxes = document.querySelectorAll('.phrase-checkbox:checked');
+            const hasSelection = selectedCheckboxes.length > 0;
+            
+            // Enable/disable batch buttons
+            const batchTtsBtn = document.getElementById('batchTtsBtn');
+            const batchAudioBtn = document.getElementById('batchAudioBtn');
+            
+            if (batchTtsBtn) {
+                batchTtsBtn.disabled = !hasSelection;
+            }
+            if (batchAudioBtn) {
+                batchAudioBtn.disabled = !hasSelection;
+            }
+            
+            // Update selected phrases info
+            const selectedInfo = document.getElementById('selectedPhrasesInfo');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (hasSelection) {
+                selectedCount.textContent = selectedCheckboxes.length;
+                selectedInfo.style.display = 'block';
+            } else {
+                selectedInfo.style.display = 'none';
+            }
+            
+            console.log(`Updated batch buttons: ${selectedCheckboxes.length} phrases selected`);
+        }
+
+        // Start batch operation for selected phrases
+        async function startBatchOperation(operationType) {
+            console.log(`Starting batch operation: ${operationType}`);
+            
+            // Get selected phrases
+            const selectedCheckboxes = document.querySelectorAll('.phrase-checkbox:checked');
+            const selectedPhraseIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            
+            if (selectedPhraseIds.length === 0) {
+                showOperationAlert('Please select at least one phrase.', 'error');
+                return;
+            }
+            
+            // Get required data
+            const url = document.getElementById('phrasesUrl').value;
+            const username = localStorage.getItem('livevox_username');
+            const password = localStorage.getItem('livevox_password');
+            
+            if (!url) {
+                showOperationAlert('Please enter the LiveVox phrases URL.', 'error');
+                return;
+            }
+            
+            if (!username || !password) {
+                showOperationAlert('Please set your credentials in the main hub first.', 'error');
+                return;
+            }
+            
+            // For audio upload operations, validate that selected phrases have audio files
+            if (operationType === 'upload_sound') {
+                const phrasesWithoutAudio = [];
+                selectedCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const audioCell = row.cells[4]; // WAV File column
+                    if (!audioCell.textContent || audioCell.textContent.trim() === 'TTS') {
+                        const nameCell = row.cells[1]; // Phrase Name column
+                        phrasesWithoutAudio.push(nameCell.textContent);
+                    }
+                });
+                
+                if (phrasesWithoutAudio.length > 0) {
+                    showOperationAlert(`The following phrases don't have audio files: ${phrasesWithoutAudio.join(', ')}. Please assign audio files or use TTS generation instead.`, 'error');
+                    return;
+                }
+            }
+            
+            try {
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                formData.append('url', url);
+                formData.append('operation_type', operationType);
+                
+                // Send all selected phrase IDs as a JSON array
+                formData.append('phrase_ids', JSON.stringify(selectedPhraseIds));
+                
+                console.log(`Making API call for ${operationType} with phrase IDs:`, selectedPhraseIds);
+                
+                const response = await fetch('/api/phrases/automation/start', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('Batch operation result:', result);
+                
+                if (response.ok) {
+                    currentTaskId = result.task_id;
+                    showProgressContainer();
+                    startProgressPolling();
+                    showOperationAlert(`Started ${operationType === 'add_phrases' ? 'TTS generation' : 'audio upload'} for ${selectedPhraseIds.length} phrases.`, 'success');
+                } else {
+                    throw new Error(result.detail || 'Failed to start batch operation');
+                }
+            } catch (error) {
+                console.error('Error starting batch operation:', error);
+                showOperationAlert(`Error starting batch operation: ${error.message}`, 'error');
+            }
+        }
+        
+        // Show operation alerts
+        function showOperationAlert(message, type) {
+            const alertDiv = document.getElementById('operationAlert');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            alertDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
