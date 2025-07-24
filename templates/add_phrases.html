@@ -371,6 +371,123 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* Audio Management Styles */
+        .audio-split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 300px;
+        }
+
+        .file-list-panel {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #ffffff;
+        }
+
+        .file-list-container {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .file-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .file-list-item.selected {
+            background-color: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .file-list-item.selected:hover {
+            background-color: #333333;
+        }
+
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .file-type-badge.direct {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+
+        .file-type-badge.converted {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        .audio-player-panel {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #ffffff;
+        }
+
+        .audio-player-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
+        }
+
+        .no-file-selected {
+            text-align: center;
+            color: #666666;
+        }
+
+        /* New Simple Audio Player Styles */
+        .simple-audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .current-file-info {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .current-file-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #000000;
+            margin-bottom: 5px;
+        }
+
+        .current-file-details {
+            font-size: 12px;
+            color: #666666;
+        }
+
+        .native-audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -383,6 +500,10 @@
             }
             .operation-cards {
                 grid-template-columns: 1fr;
+            }
+            .audio-split-layout {
+                grid-template-columns: 1fr;
+                gap: 15px;
             }
         }
     </style>
@@ -399,7 +520,7 @@
                 </svg>
                 Back to Hub
             </a>
-            
+
         </aside>
 
         <main class="main-content">
@@ -413,7 +534,7 @@
                 <p style="color: #666666; margin-bottom: 20px;">
                     Enter the LiveVox phrases admin URL. Your credentials from the main hub will be used automatically.
                 </p>
-                
+
                 <div class="form-group">
                     <label for="phrasesUrl">LiveVox Phrases URL:</label>
                     <input type="url" id="phrasesUrl" placeholder="e.g., https://portal.na6.livevox.com/BII_1/admin/phrases">
@@ -424,11 +545,11 @@
             <div class="section">
                 <h2>2. Upload & Convert Audio Files</h2>
                 <p style="color: #666666; margin-bottom: 20px;">
-                    Upload multiple WAV/M4A files to convert them to org_.wav format for LiveVox.
+                    Upload multiple audio files. Files already in .org_.wav format will be stored directly without conversion.
                 </p>
-                
+
                 <div id="audioUploadAlert"></div>
-                
+
                 <div class="file-upload-area" id="multiFileUploadArea" onclick="document.getElementById('multiWavFiles').click();">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#cccccc" viewBox="0 0 16 16" style="margin-bottom: 15px;">
                         <path d="M6.5 11.5a.5.5 0 0 1-1 0V7.618a1 1 0 0 0-.553-.894L4.553 6a1 1 0 0 0-.894 0L3.553 6.724A1 1 0 0 0 3 7.618V11.5a.5.5 0 0 1-1 0V7.618a2 2 0 0 1 1.106-1.789l.394-.211a2 2 0 0 1 1.789 0l.394.211A2 2 0 0 1 6.5 7.618V11.5z"/>
@@ -436,19 +557,45 @@
                         <path d="M13.5 7.5a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-1 0V8h-1v3.5a.5.5 0 0 1-1 0V8a1 1 0 0 1 1-1h1.5z"/>
                     </svg>
                     <p><strong>Click to select multiple audio files</strong> or drag and drop here</p>
-                    <p style="color: #999999; font-size: 12px; margin-top: 10px;">Supported formats: All audio formats (mp3, wav, m4a, aac, flac, etc.)</p>
+                    <p style="color: #999999; font-size: 12px; margin-top: 10px;">Supported formats: All audio formats (mp3, wav, m4a, aac, flac, etc.) | .org_.wav files stored directly</p>
                 </div>
                 <input type="file" id="multiWavFiles" name="multiWavFiles" accept="audio/*" multiple style="display: none;">
-                
+
                 <div id="conversionProgress" style="display: none; margin-top: 20px;">
                     <h3 style="margin-bottom: 15px;">Converting Audio Files...</h3>
                     <div id="conversionList"></div>
                 </div>
-                
-                <div id="convertedFilesList" style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">Available Converted Files:</h3>
-                    <div id="convertedFilesContent">
-                        <p style="color: #666666;">No converted files available. Upload files above to convert them.</p>
+
+                <div class="audio-management-container" style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px;">Audio File Management:</h3>
+                    <div class="audio-split-layout">
+                        <div class="file-list-panel">
+                            <h4 style="margin-bottom: 10px; font-size: 16px;">Available Files</h4>
+                            <div id="convertedFilesContent" class="file-list-container">
+                                <p style="color: #666666;">No audio files available. Upload files above to convert them.</p>
+                            </div>
+                        </div>
+                        <div class="audio-player-panel">
+                            <h4 style="margin-bottom: 10px; font-size: 16px;">Audio Player</h4>
+                            <div id="audioPlayerContainer" class="audio-player-container">
+                                <div id="noFileSelected" class="no-file-selected">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#cccccc" viewBox="0 0 16 16" style="margin-bottom: 15px;">
+                                        <path d="M9 7a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V8.707L7.854 9.354a.5.5 0 1 1-.708-.708l1.5-1.5A.5.5 0 0 1 9 7z"/>
+                                        <path d="M6.5 11.5a.5.5 0 0 1-1 0V7.618a1 1 0 0 0-.553-.894L4.553 6a1 1 0 0 0-.894 0L3.553 6.724A1 1 0 0 0 3 7.618V11.5a.5.5 0 0 1-1 0V7.618a2 2 0 0 1 1.106-1.789l.394-.211a2 2 0 0 1 1.789 0l.394.211A2 2 0 0 1 6.5 7.618V11.5z"/>
+                                    </svg>
+                                    <p style="color: #666666; margin: 0;">Select a file from the list to play audio</p>
+                                </div>
+                                <div id="simpleAudioPlayer" class="simple-audio-player" style="display: none;">
+                                    <div id="currentFileInfo" class="current-file-info">
+                                        <div id="currentFileName" class="current-file-name"></div>
+                                        <div id="currentFileDetails" class="current-file-details"></div>
+                                    </div>
+                                    <audio id="nativeAudioPlayer" class="native-audio-player" controls preload="metadata">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -459,7 +606,7 @@
                 <p style="color: #666666; margin-bottom: 20px;">
                     Add and edit phrases in the table below. Select phrases and choose operation below.
                 </p>
-                
+
                 <div id="phraseTableContainer" style="overflow-x: auto;">
                     <table id="phraseTable" class="csv-preview-table" style="width: 100%; min-width: 800px;">
                         <thead>
@@ -471,7 +618,7 @@
                                 <th style="width: 250px;">Verbiage</th>
                                 <th style="width: 150px;">Description</th>
                                 <th style="width: 150px;">WAV File</th>
-                                <th style="width: 80px;">Action</th>
+                                <th style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="phraseTableBody">
@@ -479,15 +626,15 @@
                             <tr id="addPhraseRow" style="background-color: #f8f9fa;">
                                 <td>➕</td>
                                 <td>
-                                    <input type="text" id="newPhraseName" placeholder="Enter phrase name..." 
+                                    <input type="text" id="newPhraseName" placeholder="Enter phrase name..."
                                            style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">
                                 </td>
                                 <td>
-                                    <textarea id="newPhraseVerbiage" placeholder="Enter phrase text..." 
+                                    <textarea id="newPhraseVerbiage" placeholder="Enter phrase text..."
                                               style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px; resize: vertical;" rows="2"></textarea>
                                 </td>
                                 <td>
-                                    <input type="text" id="newPhraseDescription" placeholder="Enter description..." 
+                                    <input type="text" id="newPhraseDescription" placeholder="Enter description..."
                                            style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">
                                 </td>
                                 <td>
@@ -496,7 +643,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <button type="button" class="btn" onclick="addPhraseFromInputs()" 
+                                    <button type="button" class="btn" onclick="addPhraseFromInputs()"
                                             style="padding: 5px 10px; font-size: 12px;">Add</button>
                                 </td>
                             </tr>
@@ -512,9 +659,9 @@
                 <p style="color: #666666; margin-bottom: 20px;">
                     Select phrases from the table above and choose an operation to perform on them.
                 </p>
-                
+
                 <div id="operationAlert"></div>
-                
+
                 <div class="operation-cards">
                     <div class="operation-card">
                         <h3>Generate TTS for Selected</h3>
@@ -523,16 +670,16 @@
                             Generate TTS for Selected
                         </button>
                     </div>
-                    
+
                     <div class="operation-card">
-                        <h3>Upload Audio for Selected</h3>
+                        <h3>Generate Audio for Selected</h3>
                         <p>Adds selected phrases to LiveVox and uploads their assigned WAV files.</p>
                         <button class="btn" onclick="startBatchOperation('upload_sound')" id="batchAudioBtn" disabled>
-                            Upload Audio for Selected
+                            Generate Audio for Selected
                         </button>
                     </div>
                 </div>
-                
+
                 <div id="selectedPhrasesInfo" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; display: none;">
                     <strong>Selected Phrases:</strong> <span id="selectedCount">0</span>
                 </div>
@@ -563,7 +710,7 @@
         let uploadedPhraseId = null;
 
         // SMOOTH PROGRESS ANIMATION VARIABLES - HCI STYLE
-        let currentProgressDisplay = 0.0; 
+        let currentProgressDisplay = 0.0;
         let targetProgressValue = 0.0;
         let animationTimer = null;
         let automationStartTime = null;
@@ -572,13 +719,13 @@
             if (animationTimer) {
                 clearInterval(animationTimer);
             }
-            
+
             animationTimer = setInterval(animateProgress, 50); // 50ms for smooth animation
         }
 
         function animateProgress() {
             const progressFill = document.getElementById('progressFill');
-            
+
             // Stop the timer only when the job is done and we've reached 100%
             if (targetProgressValue >= 100 && currentProgressDisplay >= 100) {
                 clearInterval(animationTimer);
@@ -598,7 +745,7 @@
                     increment = 0.1;
                 }
                 currentProgressDisplay += increment;
-            } 
+            }
             // If we have reached the target, but the final target isn't 100 yet, keep moving forward very slowly.
             else if (targetProgressValue < 100) {
                 currentProgressDisplay += 0.01; // This is the "never stop" part
@@ -608,7 +755,7 @@
             if (currentProgressDisplay > 99.9 && targetProgressValue < 100) {
                 currentProgressDisplay = 99.9;
             }
-            
+
             // Update the UI
             progressFill.style.width = `${currentProgressDisplay}%`;
             progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
@@ -617,13 +764,14 @@
         // Global variables for table management
         let currentTableRows = [];
         let convertedAudioFiles = [];
-        
+
         // Load credentials from localStorage
         document.addEventListener('DOMContentLoaded', function() {
-            loadCredentials(); 
+            loadCredentials();
             setupMultiFileUpload();
             loadConvertedFiles();
             initializePhraseTable();
+            // Simple audio player is ready - no initialization needed
         });
 
         function loadCredentials() {
@@ -663,7 +811,7 @@
             uploadArea.addEventListener('drop', function(e) {
                 e.preventDefault();
                 uploadArea.classList.remove('dragover');
-                
+
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     fileInput.files = files;
@@ -676,9 +824,9 @@
         async function handleMultiFileSelect() {
             const fileInput = document.getElementById('multiWavFiles');
             const files = Array.from(fileInput.files);
-            
+
             console.log(`Selected ${files.length} files:`, files.map(f => f.name));
-            
+
             if (files.length === 0) {
                 console.log('No files selected');
                 return;
@@ -691,7 +839,7 @@
                 const isAudio = audioExtensions.includes(fileExt) || file.type.startsWith('audio/');
                 return !isAudio;
             });
-            
+
             if (invalidFiles.length > 0) {
                 showAudioAlert(`Non-audio files detected: ${invalidFiles.map(f => f.name).join(', ')}. Please select only audio files.`, 'error');
                 fileInput.value = '';
@@ -707,10 +855,10 @@
         async function convertMultipleFiles(files) {
             const progressDiv = document.getElementById('conversionProgress');
             const listDiv = document.getElementById('conversionList');
-            
+
             progressDiv.style.display = 'block';
             listDiv.innerHTML = '';
-            
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const fileDiv = document.createElement('div');
@@ -722,21 +870,21 @@
                     </div>
                 `;
                 listDiv.appendChild(fileDiv);
-                
+
                 try {
                     console.log(`Converting file ${i + 1}/${files.length}: ${file.name}`);
-                    
+
                     const formData = new FormData();
                     formData.append('audio_file', file);
-                    
+
                     const response = await fetch('/api/phrases/convert-audio', {
                         method: 'POST',
                         body: formData
                     });
-                    
+
                     const result = await response.json();
                     console.log(`Conversion result for ${file.name}:`, result);
-                    
+
                     if (response.ok) {
                         document.getElementById(`status_${i}`).innerHTML = `<span style="color: green;">✓ Converted to ${result.converted_file.filename}</span>`;
                         convertedAudioFiles.push(result.converted_file);
@@ -750,17 +898,17 @@
                     console.error(`Error converting ${file.name}:`, error);
                 }
             }
-            
+
             showAudioAlert(`Conversion completed. ${convertedAudioFiles.length} files converted successfully.`, 'success');
             loadConvertedFiles();
         }
-        
+
         function showPhrasePreview(result) {
             const preview = document.getElementById('phrasePreview');
             const content = document.getElementById('phrasePreviewContent');
-            
+
             preview.style.display = 'block';
-            
+
             // Create preview table for the added phrase
             let tableHTML = `
                 <table class="csv-preview-table">
@@ -782,7 +930,7 @@
                     </tbody>
                 </table>
             `;
-            
+
             content.innerHTML = tableHTML;
         }
 
@@ -800,7 +948,7 @@
         function showAlert(message, type) {
             const alertDiv = document.getElementById('uploadAlert');
             alertDiv.innerHTML = `<div class="alert alert-${type === 'error' ? 'error' : 'success'}">${message}</div>`;
-            
+
             // Auto-hide success messages after 5 seconds
             if (type === 'success') {
                 setTimeout(() => {
@@ -862,28 +1010,28 @@
 
         function showProgressContainer() {
             document.getElementById('progressContainer').style.display = 'block';
-            
+
             // Reset smooth progress animation
             currentProgressDisplay = 0.0;
             targetProgressValue = 0.0;
             automationStartTime = new Date(); // Track automation start time
-            
+
             const progressFill = document.getElementById('progressFill');
             progressFill.style.width = '0%';
             progressFill.textContent = '0.0%';
             progressFill.classList.add('pulsing');
-            
+
             // Clear log content and add initial message (without timestamp like HCI)
             const logContent = document.getElementById('logContent');
             logContent.innerHTML = '';
-            
+
             const initialLog = document.createElement('div');
             initialLog.textContent = 'Starting automation...';
             logContent.appendChild(initialLog);
-            
+
             // Start smooth animation
             startSmoothAnimation();
-            
+
             // Scroll to progress container
             document.getElementById('progressContainer').scrollIntoView({
                 behavior: 'smooth'
@@ -903,7 +1051,7 @@
                     const status = await response.json();
 
                     updateProgress(status.progress, status.message);
-                    
+
                     if (status.log_messages && status.log_messages.length > 0) {
                         updateLogMessages(status.log_messages);
                     }
@@ -912,12 +1060,12 @@
                         clearInterval(progressInterval);
                         targetProgressValue = 100.0;
                         updateProgress(100, "Automation completed successfully!");
-                        
+
                         // Allow animation to complete naturally
                         setTimeout(() => {
                             currentTaskId = null;
                         }, 1000);
-                        
+
                     } else if (status.status === 'error') {
                         clearInterval(progressInterval);
                         currentTaskId = null;
@@ -940,7 +1088,7 @@
         function updateProgress(progress, message) {
             // Set the target for smooth animation instead of direct update
             targetProgressValue = parseFloat(progress);
-            
+
             if (message) {
                 // Format message like HCI: timestamp + message + running time
                 const timestamp = new Date().toLocaleTimeString();
@@ -951,15 +1099,15 @@
 
         function updateLogMessages(messages) {
             const logContent = document.getElementById('logContent');
-            
+
             // Clear existing content and add new messages with timestamps and running time
             logContent.innerHTML = '';
-            
+
             // Add initial message without timestamp
             const initialLog = document.createElement('div');
             initialLog.textContent = 'Starting automation...';
             logContent.appendChild(initialLog);
-            
+
             // Add backend messages with timestamp and running time
             messages.forEach(msg => {
                 const timestamp = new Date().toLocaleTimeString();
@@ -968,12 +1116,12 @@
                 div.textContent = `[${timestamp}] ${msg} (Running ${runningTime})`;
                 logContent.appendChild(div);
             });
-            
+
             // Keep only last 50 log entries to prevent memory issues
             while (logContent.children.length > 50) {
                 logContent.removeChild(logContent.firstChild);
             }
-            
+
             // Auto-scroll to bottom
             const logContainer = document.getElementById('logContainer');
             logContainer.scrollTop = logContainer.scrollHeight;
@@ -981,16 +1129,16 @@
 
         function addLogMessage(message) {
             const logContent = document.getElementById('logContent');
-            
+
             const div = document.createElement('div');
             div.textContent = message; // Message already formatted with timestamp and running time
             logContent.appendChild(div);
-            
+
             // Keep only last 50 log entries to prevent memory issues
             while (logContent.children.length > 50) {
                 logContent.removeChild(logContent.firstChild);
             }
-            
+
             // Auto-scroll to bottom
             const logContainer = document.getElementById('logContainer');
             logContainer.scrollTop = logContainer.scrollHeight;
@@ -1001,7 +1149,7 @@
             try {
                 const response = await fetch('/api/phrases/list');
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     populateSavedPhrasesDropdown(result.phrases);
                 } else {
@@ -1011,15 +1159,15 @@
                 console.error('Error loading saved phrases:', error);
             }
         }
-        
+
         function populateSavedPhrasesDropdown(phrases) {
             const select = document.getElementById('savedPhrasesSelect');
-            
+
             // Clear existing options except the first one
             while (select.children.length > 1) {
                 select.removeChild(select.lastChild);
             }
-            
+
             // Add phrases to dropdown
             phrases.forEach(phrase => {
                 const option = document.createElement('option');
@@ -1027,7 +1175,7 @@
                 option.textContent = `${phrase.phrase_name} (${phrase.created_at.split('T')[0]})`;
                 select.appendChild(option);
             });
-            
+
             // Setup change handler
             select.addEventListener('change', function() {
                 const phraseId = this.value;
@@ -1041,13 +1189,13 @@
                 }
             });
         }
-        
+
         function showSavedPhrasePreview(phrase) {
             const preview = document.getElementById('savedPhrasePreview');
             const content = document.getElementById('savedPhraseContent');
             const audioGroup = document.getElementById('savedAudioGroup');
             const audioSelect = document.getElementById('savedAudioSelect');
-            
+
             // Show phrase details
             content.innerHTML = `
                 <p><strong>Name:</strong> ${phrase.phrase_name}</p>
@@ -1055,7 +1203,7 @@
                 <p><strong>Description:</strong> ${phrase.description || 'None'}</p>
                 <p><strong>Has Audio:</strong> ${phrase.wav_org_file ? 'Yes (' + phrase.wav_org_file.filename + ')' : 'No'}</p>
             `;
-            
+
             // Setup audio dropdown if phrase has audio
             if (phrase.wav_org_file) {
                 audioSelect.innerHTML = `
@@ -1066,28 +1214,28 @@
             } else {
                 audioGroup.style.display = 'none';
             }
-            
+
             preview.style.display = 'block';
         }
-        
+
         function loadSavedPhrase() {
             const phraseId = document.getElementById('savedPhrasesSelect').value;
             const audioFile = document.getElementById('savedAudioSelect').value;
-            
+
             if (!phraseId) {
                 showAlert('Please select a phrase first.', 'error');
                 return;
             }
-            
+
             // Find the selected phrase
             const phrases = Array.from(document.getElementById('savedPhrasesSelect').options)
                 .map(option => option.value).filter(val => val);
-                
+
             // For now, we'll use this phrase for automation
             // Set global variable for automation
             uploadedPhraseId = phraseId;
             enableAutomationButtons();
-            
+
             showAlert(`Loaded phrase for automation. ${audioFile ? 'Using custom audio: ' + audioFile : 'Will use TTS generation.'}`, 'success');
         }
 
@@ -1118,16 +1266,16 @@
                 clearInterval(animationTimer);
                 animationTimer = null;
             }
-            
+
             // Reset progress display
             currentProgressDisplay = 0.0;
             targetProgressValue = 0.0;
-            
+
             const progressFill = document.getElementById('progressFill');
             progressFill.style.width = '0%';
             progressFill.textContent = '0.0%';
             progressFill.classList.remove('pulsing');
-            
+
             currentTaskId = null;
             const timestamp = new Date().toLocaleTimeString();
             addLogMessage(`[${timestamp}] 🛑 Automation stopped by user`);
@@ -1138,7 +1286,7 @@
             const alertDiv = document.getElementById('audioUploadAlert');
             const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
             alertDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-            
+
             // Auto-hide success messages after 5 seconds
             if (type === 'success') {
                 setTimeout(() => {
@@ -1153,28 +1301,43 @@
             try {
                 const response = await fetch('/api/phrases/converted-files');
                 console.log('API response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('API response data:', result);
-                
+
                 const contentDiv = document.getElementById('convertedFilesContent');
-                
+
                 if (response.ok && result.files && result.files.length > 0) {
                     console.log('Found files:', result.files);
-                    let filesHTML = '<ul style="list-style: none; padding: 0;">';
-                    result.files.forEach(file => {
+                    let filesHTML = '';
+                    result.files.forEach((file, index) => {
+                        const fileTypeClass = file.file_type === 'direct_org_wav' ? 'direct' : 'converted';
+                        const fileTypeText = file.file_type === 'direct_org_wav' ? 'Direct' : 'Converted';
+                        
                         filesHTML += `
-                            <li style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                                <strong>${file.filename}</strong>
-                                <div style="font-size: 12px; color: #666;">
-                                    Original: ${file.original_name || 'Unknown'} | Size: ${file.size || 'Unknown'} bytes
+                            <div class="file-list-item" onclick="selectAudioFile('${file.filename}', ${index})" data-filename="${file.filename}">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: inherit; margin-bottom: 4px;">
+                                        ${file.filename}
+                                        <span class="file-type-badge ${fileTypeClass}">${fileTypeText}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: inherit; opacity: 0.8;">
+                                        Original: ${file.original_name || 'Unknown'} | Size: ${file.size || 'Unknown'} bytes
+                                    </div>
                                 </div>
-                            </li>
+                                <button type="button" class="btn btn-danger" onclick="event.stopPropagation(); deleteConvertedFile('${file.filename}')" 
+                                        style="padding: 5px 10px; font-size: 12px; margin-left: 10px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                    </svg>
+                                    Delete
+                                </button>
+                            </div>
                         `;
                     });
-                    filesHTML += '</ul>';
                     contentDiv.innerHTML = filesHTML;
-                    
+
                     // Update the dropdown in the phrase table
                     updateWavFileDropdown(result.files);
                 } else {
@@ -1192,10 +1355,10 @@
         function updateWavFileDropdown(files) {
             const dropdown = document.getElementById('newPhraseWavFile');
             if (!dropdown) return;
-            
+
             // Clear existing options except the first one
             dropdown.innerHTML = '<option value="">No audio file</option>';
-            
+
             // Add converted files as options
             files.forEach(file => {
                 const option = document.createElement('option');
@@ -1208,43 +1371,43 @@
         // Add phrase from input fields in the table
         async function addPhraseFromInputs() {
             console.log('Adding phrase from table inputs...');
-            
+
             const phraseName = document.getElementById('newPhraseName').value.trim();
             const verbiage = document.getElementById('newPhraseVerbiage').value.trim();
             const description = document.getElementById('newPhraseDescription').value.trim();
             const wavFile = document.getElementById('newPhraseWavFile').value;
-            
+
             if (!phraseName || !verbiage) {
                 showAudioAlert('Phrase name and verbiage are required.', 'error');
                 return;
             }
-            
+
             try {
                 // Create form data
                 const formData = new FormData();
                 formData.append('phrase_name', phraseName);
                 formData.append('phrase_verbiage', verbiage);
                 formData.append('phrase_description', description);
-                
+
                 // Add converted file name if selected
                 if (wavFile) {
                     formData.append('converted_file_name', wavFile);
                 }
-                
+
                 console.log('Sending phrase data:', {
                     phrase_name: phraseName,
                     phrase_verbiage: verbiage,
                     phrase_description: description
                 });
-                
+
                 const response = await fetch('/api/phrases/add-phrase', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
                 console.log('Add phrase result:', result);
-                
+
                 if (response.ok) {
                     // Create phrase data object for table display
                     const phraseData = {
@@ -1253,16 +1416,16 @@
                         description: description,
                         wav_org: wavFile || null
                     };
-                    
+
                     // Add to table
                     addPhraseToTable(phraseData, result.phrase_id);
-                    
+
                     // Clear input fields
                     document.getElementById('newPhraseName').value = '';
                     document.getElementById('newPhraseVerbiage').value = '';
                     document.getElementById('newPhraseDescription').value = '';
                     document.getElementById('newPhraseWavFile').value = '';
-                    
+
                     showAudioAlert(`Phrase "${phraseName}" added successfully!`, 'success');
                 } else {
                     showAudioAlert(`Error adding phrase: ${result.detail}`, 'error');
@@ -1277,7 +1440,7 @@
         function addPhraseToTable(phraseData, phraseId) {
             const tableBody = document.querySelector('#phraseTable tbody');
             const newRow = document.createElement('tr');
-            
+
             newRow.innerHTML = `
                 <td><input type="checkbox" value="${phraseId}" class="phrase-checkbox"></td>
                 <td>${phraseData.phrase_name}</td>
@@ -1285,51 +1448,184 @@
                 <td>${phraseData.description || ''}</td>
                 <td>${phraseData.wav_org || 'TTS'}</td>
                 <td>
-                    <button type="button" class="btn" onclick="removePhraseFromTable(this, '${phraseId}')" style="background-color: #ff4444; font-size: 12px; padding: 4px 8px;">Remove</button>
+                    <button type="button" class="btn btn-secondary" onclick="editPhraseInTable(this, '${phraseId}', ${JSON.stringify(phraseData).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
+                    <button type="button" class="btn btn-danger" onclick="removePhraseFromTable(this, '${phraseId}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
                 </td>
             `;
-            
+
             // Insert before the input row
             const inputRow = document.getElementById('addPhraseRow');
             inputRow.parentNode.insertBefore(newRow, inputRow);
-            
+
             currentTableRows.push({
                 id: phraseId,
                 data: phraseData,
                 element: newRow
             });
-            
+
             // Add event listener to checkbox to update batch buttons
             const checkbox = newRow.querySelector('.phrase-checkbox');
             checkbox.addEventListener('change', updateBatchButtons);
-            
+
             // Update batch buttons state
             updateBatchButtons();
         }
 
-        // Remove phrase from table and backend storage
-        async function removePhraseFromTable(button, phraseId) {
-            console.log(`Removing phrase with ID: ${phraseId}`);
+        // Edit phrase in table
+        function editPhraseInTable(button, phraseId, phraseData) {
+            const row = button.closest('tr');
+            const cells = row.cells;
+            
+            // Store original content
+            const originalContent = {
+                name: cells[1].textContent,
+                verbiage: cells[2].textContent,
+                description: cells[3].textContent,
+                wavFile: cells[4].textContent
+            };
+            
+            // Replace cells with input fields
+            cells[1].innerHTML = `<input type="text" value="${originalContent.name}" style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">`;
+            cells[2].innerHTML = `<textarea rows="2" style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px; resize: vertical;">${originalContent.verbiage}</textarea>`;
+            cells[3].innerHTML = `<input type="text" value="${originalContent.description}" style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;">`;
+            
+            // Create WAV file dropdown
+            const wavSelect = document.createElement('select');
+            wavSelect.style.cssText = 'width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 3px;';
+            wavSelect.innerHTML = '<option value="">No audio file</option>';
+            
+            // Populate with converted files
+            const mainDropdown = document.getElementById('newPhraseWavFile');
+            if (mainDropdown) {
+                Array.from(mainDropdown.options).slice(1).forEach(option => {
+                    const newOption = document.createElement('option');
+                    newOption.value = option.value;
+                    newOption.textContent = option.textContent;
+                    if (originalContent.wavFile !== 'TTS' && originalContent.wavFile === option.value) {
+                        newOption.selected = true;
+                    }
+                    wavSelect.appendChild(newOption);
+                });
+            }
+            cells[4].innerHTML = '';
+            cells[4].appendChild(wavSelect);
+            
+            // Replace action buttons
+            cells[5].innerHTML = `
+                <button type="button" class="btn" onclick="savePhraseEdit(this, '${phraseId}')" style="padding: 5px 10px; font-size: 12px;">Save</button>
+                <button type="button" class="btn btn-secondary" onclick="cancelPhraseEdit(this, '${phraseId}', ${JSON.stringify(originalContent).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Cancel</button>
+            `;
+        }
+
+        // Save phrase edit
+        async function savePhraseEdit(button, phraseId) {
+            const row = button.closest('tr');
+            const cells = row.cells;
+            
+            const newName = cells[1].querySelector('input').value.trim();
+            const newVerbiage = cells[2].querySelector('textarea').value.trim();
+            const newDescription = cells[3].querySelector('input').value.trim();
+            const newWavFile = cells[4].querySelector('select').value;
+            
+            if (!newName || !newVerbiage) {
+                showAudioAlert('Phrase name and verbiage are required.', 'error');
+                return;
+            }
             
             try {
-                // First, delete from backend storage
+                const formData = new FormData();
+                formData.append('phrase_name', newName);
+                formData.append('phrase_verbiage', newVerbiage);
+                formData.append('phrase_description', newDescription);
+                if (newWavFile) {
+                    formData.append('converted_file_name', newWavFile);
+                }
+                
                 const response = await fetch(`/api/phrases/${phraseId}`, {
-                    method: 'DELETE'
+                    method: 'PUT',
+                    body: formData
                 });
                 
                 const result = await response.json();
                 
                 if (response.ok) {
+                    // Update display cells
+                    cells[1].textContent = newName;
+                    cells[2].textContent = newVerbiage;
+                    cells[3].textContent = newDescription;
+                    cells[4].textContent = newWavFile || 'TTS';
+                    
+                    // Restore action buttons
+                    const phraseData = {
+                        phrase_name: newName,
+                        verbiage: newVerbiage,
+                        description: newDescription,
+                        wav_org: newWavFile || null
+                    };
+                    
+                    cells[5].innerHTML = `
+                        <button type="button" class="btn btn-secondary" onclick="editPhraseInTable(this, '${phraseId}', ${JSON.stringify(phraseData).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
+                        <button type="button" class="btn btn-danger" onclick="removePhraseFromTable(this, '${phraseId}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                    `;
+                    
+                    showAudioAlert('Phrase updated successfully!', 'success');
+                } else {
+                    showAudioAlert(`Error updating phrase: ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating phrase:', error);
+                showAudioAlert(`Error updating phrase: ${error.message}`, 'error');
+            }
+        }
+
+        // Cancel phrase edit
+        function cancelPhraseEdit(button, phraseId, originalContent) {
+            const row = button.closest('tr');
+            const cells = row.cells;
+            
+            // Restore original content
+            cells[1].textContent = originalContent.name;
+            cells[2].textContent = originalContent.verbiage;
+            cells[3].textContent = originalContent.description;
+            cells[4].textContent = originalContent.wavFile;
+            
+            // Restore action buttons
+            const phraseData = {
+                phrase_name: originalContent.name,
+                verbiage: originalContent.verbiage,
+                description: originalContent.description,
+                wav_org: originalContent.wavFile !== 'TTS' ? originalContent.wavFile : null
+            };
+            
+            cells[5].innerHTML = `
+                <button type="button" class="btn btn-secondary" onclick="editPhraseInTable(this, '${phraseId}', ${JSON.stringify(phraseData).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
+                <button type="button" class="btn btn-danger" onclick="removePhraseFromTable(this, '${phraseId}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+            `;
+        }
+
+        // Remove phrase from table and backend storage
+        async function removePhraseFromTable(button, phraseId) {
+            console.log(`Removing phrase with ID: ${phraseId}`);
+
+            try {
+                // First, delete from backend storage
+                const response = await fetch(`/api/phrases/${phraseId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
                     // Remove from frontend table
                     const row = button.closest('tr');
                     row.remove();
-                    
+
                     // Remove from currentTableRows array
                     currentTableRows = currentTableRows.filter(item => item.id !== phraseId);
-                    
+
                     // Update batch buttons state
                     updateBatchButtons();
-                    
+
                     showAudioAlert('Phrase deleted successfully', 'success');
                 } else {
                     showAudioAlert(`Error deleting phrase: ${result.detail}`, 'error');
@@ -1343,26 +1639,26 @@
         // Load saved phrases from backend into table
         async function loadSavedPhrasesIntoTable() {
             console.log('Loading saved phrases into table...');
-            
+
             try {
                 const response = await fetch('/api/phrases/list');
                 const result = await response.json();
-                
+
                 if (response.ok && result.phrases && result.phrases.length > 0) {
                     console.log(`Loading ${result.phrases.length} saved phrases`);
-                    
+
                     // Clear existing table rows (except input row)
                     currentTableRows = [];
                     const tableBody = document.getElementById('phraseTableBody');
                     const inputRow = document.getElementById('addPhraseRow');
-                    
+
                     // Remove all rows except the input row
                     Array.from(tableBody.children).forEach(row => {
                         if (row.id !== 'addPhraseRow') {
                             row.remove();
                         }
                     });
-                    
+
                     // Add each saved phrase to the table
                     result.phrases.forEach(phrase => {
                         const phraseData = {
@@ -1371,10 +1667,10 @@
                             description: phrase.description || '',
                             wav_org: phrase.wav_org_file ? phrase.wav_org_file.filename : null
                         };
-                        
+
                         addPhraseToTable(phraseData, phrase.id);
                     });
-                    
+
                     console.log(`Successfully loaded ${result.phrases.length} phrases into table`);
                     updateBatchButtons(); // Update button states
                 } else {
@@ -1389,16 +1685,16 @@
         // Initialize the phrase table
         function initializePhraseTable() {
             console.log('Initializing phrase table...');
-            
+
             // Load any existing converted files for the dropdown
             loadConvertedFiles();
-            
+
             // Load saved phrases into the table
             loadSavedPhrasesIntoTable();
-            
+
             // Initialize currentTableRows array
             currentTableRows = [];
-            
+
             // Set up batch operation handlers
             const selectAllCheckbox = document.getElementById('selectAllPhrases');
             if (selectAllCheckbox) {
@@ -1407,80 +1703,80 @@
                     checkboxes.forEach(cb => cb.checked = this.checked);
                 });
             }
-            
+
             console.log('Phrase table initialized');
         }
-        
+
         // Toggle select all checkboxes
         function toggleSelectAll() {
             const selectAllCheckbox = document.getElementById('selectAll');
             const phraseCheckboxes = document.querySelectorAll('.phrase-checkbox');
-            
+
             phraseCheckboxes.forEach(checkbox => {
                 checkbox.checked = selectAllCheckbox.checked;
             });
-            
+
             updateBatchButtons();
         }
-        
+
         // Update batch operation buttons based on selected phrases
         function updateBatchButtons() {
             const selectedCheckboxes = document.querySelectorAll('.phrase-checkbox:checked');
             const hasSelection = selectedCheckboxes.length > 0;
-            
+
             // Enable/disable batch buttons
             const batchTtsBtn = document.getElementById('batchTtsBtn');
             const batchAudioBtn = document.getElementById('batchAudioBtn');
-            
+
             if (batchTtsBtn) {
                 batchTtsBtn.disabled = !hasSelection;
             }
             if (batchAudioBtn) {
                 batchAudioBtn.disabled = !hasSelection;
             }
-            
+
             // Update selected phrases info
             const selectedInfo = document.getElementById('selectedPhrasesInfo');
             const selectedCount = document.getElementById('selectedCount');
-            
+
             if (hasSelection) {
                 selectedCount.textContent = selectedCheckboxes.length;
                 selectedInfo.style.display = 'block';
             } else {
                 selectedInfo.style.display = 'none';
             }
-            
+
             console.log(`Updated batch buttons: ${selectedCheckboxes.length} phrases selected`);
         }
 
         // Start batch operation for selected phrases
         async function startBatchOperation(operationType) {
             console.log(`Starting batch operation: ${operationType}`);
-            
+
             // Get selected phrases
             const selectedCheckboxes = document.querySelectorAll('.phrase-checkbox:checked');
             const selectedPhraseIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
+
             if (selectedPhraseIds.length === 0) {
                 showOperationAlert('Please select at least one phrase.', 'error');
                 return;
             }
-            
+
             // Get required data
             const url = document.getElementById('phrasesUrl').value;
             const username = localStorage.getItem('livevox_username');
             const password = localStorage.getItem('livevox_password');
-            
+
             if (!url) {
                 showOperationAlert('Please enter the LiveVox phrases URL.', 'error');
                 return;
             }
-            
+
             if (!username || !password) {
                 showOperationAlert('Please set your credentials in the main hub first.', 'error');
                 return;
             }
-            
+
             // For audio upload operations, validate that selected phrases have audio files
             if (operationType === 'upload_sound') {
                 const phrasesWithoutAudio = [];
@@ -1492,13 +1788,13 @@
                         phrasesWithoutAudio.push(nameCell.textContent);
                     }
                 });
-                
+
                 if (phrasesWithoutAudio.length > 0) {
                     showOperationAlert(`The following phrases don't have audio files: ${phrasesWithoutAudio.join(', ')}. Please assign audio files or use TTS generation instead.`, 'error');
                     return;
                 }
             }
-            
+
             try {
                 // Prepare form data
                 const formData = new FormData();
@@ -1506,20 +1802,20 @@
                 formData.append('password', password);
                 formData.append('url', url);
                 formData.append('operation_type', operationType);
-                
+
                 // Send all selected phrase IDs as a JSON array
                 formData.append('phrase_ids', JSON.stringify(selectedPhraseIds));
-                
+
                 console.log(`Making API call for ${operationType} with phrase IDs:`, selectedPhraseIds);
-                
+
                 const response = await fetch('/api/phrases/automation/start', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
                 console.log('Batch operation result:', result);
-                
+
                 if (response.ok) {
                     currentTaskId = result.task_id;
                     showProgressContainer();
@@ -1533,18 +1829,155 @@
                 showOperationAlert(`Error starting batch operation: ${error.message}`, 'error');
             }
         }
-        
+
         // Show operation alerts
         function showOperationAlert(message, type) {
             const alertDiv = document.getElementById('operationAlert');
             const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
             alertDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-            
+
             // Auto-hide success messages after 5 seconds
             if (type === 'success') {
                 setTimeout(() => {
                     alertDiv.innerHTML = '';
                 }, 5000);
+            }
+        }
+
+        // Simple audio player variables
+        let currentlySelectedElement = null;
+        let selectedAudioFile = null;
+
+        // Select audio file for playback
+        function selectAudioFile(filename, index) {
+            console.log(`Selecting audio file: ${filename}`);
+            
+            // Remove previous selection
+            if (currentlySelectedElement) {
+                currentlySelectedElement.classList.remove('selected');
+            }
+            
+            // Add selection to current element
+            const element = document.querySelector(`[data-filename="${filename}"]`);
+            if (element) {
+                element.classList.add('selected');
+                currentlySelectedElement = element;
+            }
+            
+            // Store selected file info
+            selectedAudioFile = filename;
+            
+            // Get file data and load into player
+            fetch('/api/phrases/converted-files')
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success && result.files) {
+                        const fileData = result.files.find(f => f.filename === filename);
+                        if (fileData) {
+                            loadSimpleAudioPlayer(fileData);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading file data:', error);
+                    showAudioAlert('Error loading audio file data', 'error');
+                });
+        }
+
+        // Load file into simple HTML5 audio player
+        function loadSimpleAudioPlayer(fileData) {
+            console.log('Loading simple audio player for:', fileData.filename);
+            
+            // Hide no-file message and show player
+            document.getElementById('noFileSelected').style.display = 'none';
+            document.getElementById('simpleAudioPlayer').style.display = 'block';
+            
+            // Update file info
+            document.getElementById('currentFileName').textContent = fileData.filename;
+            const fileTypeText = fileData.file_type === 'direct_org_wav' ? 'Direct .org_wav' : 'Converted';
+            document.getElementById('currentFileDetails').textContent = 
+                `${fileTypeText} | Original: ${fileData.original_name} | Size: ${fileData.size} bytes`;
+            
+            // Set audio source
+            const audioPlayer = document.getElementById('nativeAudioPlayer');
+            audioPlayer.src = `/api/phrases/audio/${encodeURIComponent(fileData.filename)}`;
+            
+            // Handle audio load errors
+            audioPlayer.onerror = function() {
+                showAudioAlert('Error loading audio file', 'error');
+            };
+        }
+
+        // Reset audio player to initial state
+        function resetSimpleAudioPlayer() {
+            console.log('Resetting simple audio player');
+            
+            // Reset variables
+            selectedAudioFile = null;
+            currentlySelectedElement = null;
+            
+            // Hide player and show no-file message
+            document.getElementById('simpleAudioPlayer').style.display = 'none';
+            document.getElementById('noFileSelected').style.display = 'block';
+            
+            // Clear audio source
+            const audioPlayer = document.getElementById('nativeAudioPlayer');
+            audioPlayer.src = '';
+            
+            // Remove selection from file list
+            const selectedItems = document.querySelectorAll('.file-list-item.selected');
+            selectedItems.forEach(item => item.classList.remove('selected'));
+        }
+
+        // Delete converted file with confirmation
+        async function deleteConvertedFile(filename) {
+            console.log(`Attempting to delete converted file: ${filename}`);
+            
+            // Show confirmation dialog
+            const confirmMessage = `Are you sure you want to delete "${filename}"?\n\nThis action cannot be undone. If this file is used by any phrases, it will be removed from those phrases.`;
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            try {
+                console.log(`Deleting file: ${filename}`);
+                const response = await fetch(`/api/phrases/converted-files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                console.log('Delete file result:', result);
+                
+                if (response.ok) {
+                    // Show success message with details
+                    let message = result.message;
+                    if (result.affected_phrases && result.affected_phrases.length > 0) {
+                        message += `\nAffected phrases: ${result.affected_phrases.join(', ')}`;
+                    }
+                    
+                    showAudioAlert(message, 'success');
+                    
+                    // Reset audio player if currently selected file was deleted
+                    if (selectedAudioFile === filename) {
+                        resetSimpleAudioPlayer();
+                    }
+                    
+                    // Refresh the converted files list
+                    await loadConvertedFiles();
+                    
+                    // Also refresh the phrase table if phrases were affected
+                    if (result.affected_phrases && result.affected_phrases.length > 0) {
+                        await loadSavedPhrasesIntoTable();
+                    }
+                    
+                    console.log(`Successfully deleted file: ${filename}`);
+                } else {
+                    showAudioAlert(`Error deleting file: ${result.detail}`, 'error');
+                    console.error('Error deleting file:', result.detail);
+                }
+            } catch (error) {
+                console.error('Error deleting converted file:', error);
+                showAudioAlert(`Error deleting file: ${error.message}`, 'error');
             }
         }
     </script>

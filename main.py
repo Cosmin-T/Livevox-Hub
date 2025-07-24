@@ -1023,6 +1023,24 @@ class PhrasesDataManager(DataManager):
         data = self.load_data()
         return data.get('phrases', [])
 
+    def update_phrase(self, phrase_id, updated_data):
+        """Update an existing phrase by ID"""
+        data = self.load_data()
+        
+        for i, phrase in enumerate(data['phrases']):
+            if phrase.get('id') == phrase_id:
+                # Update the phrase data while preserving id and created_at
+                data['phrases'][i].update(updated_data)
+                data['phrases'][i]['id'] = phrase_id  # Ensure ID is preserved
+                if 'created_at' not in data['phrases'][i]:
+                    from datetime import datetime
+                    data['phrases'][i]['created_at'] = datetime.now().isoformat()
+                
+                self.save_data(data)
+                print(f"Updated phrase with ID: {phrase_id}")
+                return True
+        return False
+
     def delete_phrase(self, phrase_id):
         """Delete a phrase by ID"""
         data = self.load_data()
@@ -1659,7 +1677,8 @@ async def get_converted_files():
             {
                 "filename": f["filename"],
                 "original_name": f.get("original_name", f["filename"]),
-                "size": f.get("size", 0)
+                "size": f.get("size", 0),
+                "file_type": f.get("file_type", "converted")  # Default to converted for backward compatibility
             }
             for f in all_files
         ]
@@ -1669,6 +1688,107 @@ async def get_converted_files():
     except Exception as e:
         print(f"Error listing converted files: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list converted files: {str(e)}")
+
+@app.delete("/api/phrases/converted-files/{filename}")
+async def delete_converted_file(filename: str):
+    """Delete a converted audio file"""
+    try:
+        # Check if file is used by any phrases
+        phrases_using_file = []
+        all_phrases = phrases_data_manager.get_all_phrases()
+        
+        for phrase in all_phrases:
+            if phrase.get('wav_org_file') and phrase['wav_org_file'].get('filename') == filename:
+                phrases_using_file.append(phrase['phrase_name'])
+        
+        # If file is in use, return warning (but still allow deletion)
+        if phrases_using_file:
+            print(f"Warning: File {filename} is used by phrases: {phrases_using_file}")
+        
+        # Delete the file from storage
+        success = await delete_converted_file_from_storage(filename)
+        
+        if success:
+            # Remove from memory cache if present
+            if hasattr(app.state, 'converted_audio_cache'):
+                app.state.converted_audio_cache = [
+                    f for f in app.state.converted_audio_cache 
+                    if f.get('filename') != filename
+                ]
+            
+            # Update phrases that were using this file
+            if phrases_using_file:
+                for phrase in all_phrases:
+                    if phrase.get('wav_org_file') and phrase['wav_org_file'].get('filename') == filename:
+                        # Remove the file reference from the phrase
+                        phrase['wav_org_file'] = None
+                        phrases_data_manager.update_phrase(phrase['id'], phrase)
+                
+                return {
+                    "success": True, 
+                    "message": f"File {filename} deleted successfully. Removed from {len(phrases_using_file)} phrase(s).",
+                    "affected_phrases": phrases_using_file
+                }
+            else:
+                return {
+                    "success": True, 
+                    "message": f"File {filename} deleted successfully."
+                }
+        else:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting converted file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
+
+@app.get("/api/phrases/audio/{filename}")
+async def serve_audio_file(filename: str):
+    """Serve audio file for streaming/playback"""
+    try:
+        # Load converted files from storage
+        stored_files = await load_converted_files_from_storage()
+        
+        # Also check memory cache
+        if hasattr(app.state, 'converted_audio_cache'):
+            for cache_file in app.state.converted_audio_cache:
+                if not any(f['filename'] == cache_file['filename'] for f in stored_files):
+                    stored_files.append(cache_file)
+        
+        # Find the requested file
+        audio_file = next((f for f in stored_files if f['filename'] == filename), None)
+        
+        if not audio_file:
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        # Decode base64 content
+        import base64
+        try:
+            audio_content = base64.b64decode(audio_file['content'])
+        except Exception as e:
+            print(f"Error decoding audio file {filename}: {e}")
+            raise HTTPException(status_code=500, detail="Error processing audio file")
+        
+        # Return audio response with proper headers
+        from fastapi.responses import Response
+        
+        return Response(
+            content=audio_content,
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": f"inline; filename={filename}",
+                "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(len(audio_content))
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error serving audio file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to serve audio file: {str(e)}")
 
 @app.get("/api/phrases/{phrase_id}")
 async def get_phrase(phrase_id: str):
@@ -1683,6 +1803,70 @@ async def get_phrase(phrase_id: str):
     except Exception as e:
         print(f"Error getting phrase: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get phrase: {str(e)}")
+
+@app.put("/api/phrases/{phrase_id}")
+async def update_phrase(
+    phrase_id: str,
+    phrase_name: str = Form(...),
+    phrase_verbiage: str = Form(...),
+    phrase_description: str = Form(default=""),
+    converted_file_name: Optional[str] = Form(None)
+):
+    """Update an existing phrase by ID"""
+    try:
+        # Validate required fields
+        if not phrase_name.strip():
+            raise HTTPException(status_code=400, detail="Phrase name is required")
+        if not phrase_verbiage.strip():
+            raise HTTPException(status_code=400, detail="Phrase verbiage is required")
+
+        # Check if phrase exists
+        existing_phrase = phrases_data_manager.get_phrase(phrase_id)
+        if not existing_phrase:
+            raise HTTPException(status_code=404, detail="Phrase not found")
+
+        # Handle audio file association
+        wav_org_file = None
+        if converted_file_name:
+            # Load converted files to find the file data
+            try:
+                converted_files = await load_converted_files_from_storage()
+                selected_file = next((f for f in converted_files if f['filename'] == converted_file_name), None)
+                
+                if selected_file:
+                    wav_org_file = {
+                        "filename": selected_file["filename"],
+                        "original_name": selected_file.get("original_name", selected_file["filename"]),
+                        "size": selected_file.get("size", 0),
+                        "base64_content": selected_file.get("base64_content", "")
+                    }
+                    print(f"Associated converted file: {converted_file_name}")
+                else:
+                    print(f"Warning: Converted file {converted_file_name} not found in storage")
+            except Exception as e:
+                print(f"Error loading converted file {converted_file_name}: {e}")
+
+        # Prepare updated phrase data
+        updated_data = {
+            "phrase_name": phrase_name.strip(),
+            "verbiage": phrase_verbiage.strip(),
+            "description": phrase_description.strip(),
+            "wav_org_file": wav_org_file
+        }
+
+        # Update the phrase
+        success = phrases_data_manager.update_phrase(phrase_id, updated_data)
+        
+        if success:
+            return {"success": True, "message": f"Phrase {phrase_id} updated successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Phrase not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating phrase: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update phrase: {str(e)}")
 
 async def save_converted_file_to_storage(file_data):
     """Save converted audio file to persistent storage"""
@@ -1709,6 +1893,37 @@ async def save_converted_file_to_storage(file_data):
 
     except Exception as e:
         print(f"Error saving converted file to storage: {e}")
+
+async def delete_converted_file_from_storage(filename: str):
+    """Delete a converted audio file from persistent storage"""
+    try:
+        converted_files_path = "converted_audio_files.json"
+        
+        # Load existing files
+        try:
+            with open(converted_files_path, 'r') as f:
+                stored_files = json.load(f)
+        except FileNotFoundError:
+            print(f"No converted_audio_files.json found, cannot delete {filename}")
+            return False
+        
+        # Find and remove the file
+        original_count = len(stored_files)
+        stored_files = [f for f in stored_files if f.get('filename') != filename]
+        
+        if len(stored_files) < original_count:
+            # Save updated list
+            with open(converted_files_path, 'w') as f:
+                json.dump(stored_files, f, indent=2)
+            print(f"Deleted converted file from storage: {filename}")
+            return True
+        else:
+            print(f"File not found in storage: {filename}")
+            return False
+            
+    except Exception as e:
+        print(f"Error deleting converted file from storage: {e}")
+        return False
 
 async def load_converted_files_from_storage():
     """Load converted audio files from persistent storage"""
@@ -1953,11 +2168,12 @@ async def convert_audio_file(audio_file: UploadFile = File(...)):
     from pathlib import Path
 
     try:
-        print(f"Converting audio file: {audio_file.filename}")
+        print(f"Processing audio file: {audio_file.filename}")
 
         # Validate file type - accept all common audio formats
         audio_extensions = ['.wav', '.m4a', '.mp3', '.aac', '.flac', '.ogg', '.wma', '.m4p', '.3gp', '.amr']
         file_ext = os.path.splitext(audio_file.filename)[1].lower()
+        base_name = os.path.splitext(audio_file.filename)[0]
 
         # Check both extension and content type
         is_audio_file = (file_ext in audio_extensions or
@@ -1970,6 +2186,58 @@ async def convert_audio_file(audio_file: UploadFile = File(...)):
                 status_code=400,
                 detail=f"Unsupported file type: {file_ext}. Please provide an audio file."
             )
+
+        # Check if this is already a direct .org_wav file
+        # Handle both patterns: org_filename.wav and filename.org_.wav
+        print(f"DEBUG: Checking file: {audio_file.filename}")
+        print(f"DEBUG: file_ext = '{file_ext}', base_name = '{base_name}'")
+        print(f"DEBUG: base_name.startswith('org_') = {base_name.startswith('org_')}")
+        print(f"DEBUG: base_name.endswith('.org_') = {base_name.endswith('.org_')}")
+        print(f"DEBUG: filename.endswith('.org_.wav') = {audio_file.filename.endswith('.org_.wav')}")
+        
+        is_direct_org_wav = (
+            (file_ext == '.wav' and base_name.startswith('org_')) or
+            (file_ext == '.wav' and base_name.endswith('.org_')) or
+            (audio_file.filename.endswith('.org_.wav'))
+        )
+        
+        print(f"DEBUG: is_direct_org_wav = {is_direct_org_wav}")
+        
+        if is_direct_org_wav:
+            print(f"File {audio_file.filename} is already in org_.wav format, storing directly")
+            
+            # Read the file content directly
+            content = await audio_file.read()
+            
+            import base64
+            converted_file_data = {
+                "filename": audio_file.filename,
+                "original_name": audio_file.filename,
+                "content": base64.b64encode(content).decode('utf-8'),
+                "size": len(content),
+                "file_type": "direct_org_wav"  # Mark as direct upload
+            }
+
+            # Store file in both memory cache and persistent storage
+            if not hasattr(app.state, 'converted_audio_cache'):
+                app.state.converted_audio_cache = []
+            app.state.converted_audio_cache.append(converted_file_data)
+
+            # Also save to persistent storage
+            await save_converted_file_to_storage(converted_file_data)
+
+            print(f"Direct org_.wav file stored successfully")
+
+            return {
+                "success": True,
+                "message": f"Direct org_.wav file stored successfully (no conversion needed)",
+                "converted_file": {
+                    "filename": audio_file.filename,
+                    "original_name": audio_file.filename,
+                    "size": len(content),
+                    "file_type": "direct_org_wav"
+                }
+            }
 
         # Use Python native audio processing (no external dependencies needed)
         print("Using Python native audio conversion")
@@ -2008,7 +2276,8 @@ async def convert_audio_file(audio_file: UploadFile = File(...)):
                 "filename": output_filename,
                 "original_name": original_filename,
                 "content": base64.b64encode(converted_content).decode('utf-8'),
-                "size": len(converted_content)
+                "size": len(converted_content),
+                "file_type": "converted"  # Mark as converted file
             }
 
             # Store converted file in both memory cache and persistent storage
@@ -2900,85 +3169,107 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                         raise Exception(f"Failed to process phrase data: {str(e)}")
 
                     if config['operation_type'] == 'add_phrases':
-                        # Add single phrase and generate TTS
-                        update_progress(30, f"Adding phrase: {phrase_name}")
+                        # Process all selected phrases for TTS generation
+                        total_phrases = len(config['phrases_data'])
+                        update_progress(10, f"Starting TTS generation for {total_phrases} phrases...")
+                        
                         try:
-                            # Click Add Phrase button
-                            await page.get_by_role("button", name="Add Phrase(s)").click()
-                            await asyncio.sleep(0.5)
+                            # FIRST: Add all phrases 
+                            for i, phrase_data in enumerate(config['phrases_data']):
+                                phrase_name = phrase_data['phrase_name']
+                                verbiage = phrase_data['verbiage']
+                                description = phrase_data.get('description', '')
+                                
+                                progress = 10 + (i * 30 // total_phrases)  # 10% to 40%
+                                update_progress(progress, f"Adding phrase: {phrase_name}")
+                                
+                                try:
+                                    # Click Add Phrase button
+                                    await page.get_by_role("button", name="Add Phrase(s)").click()
+                                    await asyncio.sleep(0.5)
 
-                            # Fill form
-                            await page.locator("#fileName").click()
-                            await page.locator("#fileName").fill(phrase_name)
-                            await page.locator("#fileName").press("Tab")
-                            await page.locator("#verbiage").fill(verbiage)
-                            await page.locator("#verbiage").press("Tab")
-                            await page.locator("#description").fill(description)
+                                    # Fill form
+                                    await page.locator("#fileName").click()
+                                    await page.locator("#fileName").fill(phrase_name)
+                                    await page.locator("#fileName").press("Tab")
+                                    await page.locator("#verbiage").fill(verbiage)
+                                    await page.locator("#verbiage").press("Tab")
+                                    await page.locator("#description").fill(description)
 
-                            # Save phrase
-                            await page.locator("#add-phrase-dialog__save-btn").click()
-                            await asyncio.sleep(0.5)
+                                    # Save phrase
+                                    await page.locator("#add-phrase-dialog__save-btn").click()
+                                    await asyncio.sleep(0.5)
 
-                            update_progress(40, f"Successfully added phrase: {phrase_name}")
+                                except Exception as e:
+                                    update_progress(progress, f"Error adding {phrase_name}: {str(e)}")
 
-                        except Exception as e:
-                            update_progress(35, f"Error adding {phrase_name}: {str(e)}")
-
-                        # STEP 2: Generate TTS for the phrase
-                        print(f"DEBUG: About to start TTS generation for phrase: {phrase_name}")
-                        update_progress(50, f"Generating TTS for phrase: {phrase_name}")
-                        voices = ['Bob', 'Julie', 'Juanita']
-
-                        try:
-                            # Set dropdown to "File Name"
-                            await page.locator("#phrases__search_for div").filter(has_text="All").nth(2).click()
+                            # SECOND: Generate TTS for all phrases
+                            update_progress(40, "Generating TTS for all phrases...")
+                            voices = ['Bob', 'Julie', 'Juanita']
+                            
+                            # Set dropdown to "File Name" ONCE at the beginning
+                            await page.locator("#phrases__search_for svg").click()
+                            await page.wait_for_selector("#react-select-3-option-1", timeout=30000)
                             await page.locator("#react-select-3-option-1").click()
+                            
+                            for i, phrase_data in enumerate(config['phrases_data']):
+                                phrase_name = phrase_data['phrase_name']
+                                
+                                progress = 40 + (i * 55 // total_phrases)  # 40% to 95%
+                                update_progress(progress, f"Generating TTS for: {phrase_name}")
 
-                            # Search for the phrase
-                            await page.locator("#phrases__search_text").click()
-                            await page.locator("#phrases__search_text").fill(phrase_name)
-                            await page.locator("#phrases__search-btn").click()
-                            await asyncio.sleep(3)
+                                try:
+                                    # Search for the phrase (dropdown already set to "File Name")
+                                    await page.locator("#phrases__search_text").click()
+                                    await page.locator("#phrases__search_text").fill(phrase_name)
+                                    await page.locator("#phrases__search-btn").click()
+                                    await asyncio.sleep(3)
 
-                            # Click on the phrase
-                            await page.get_by_text(phrase_name, exact=True).click()
-                            await asyncio.sleep(1)
+                                    # Get the list of web files associated with the phrase
+                                    elements = await page.query_selector_all('.rt-td span:first-child span')
+                                    for element in elements:
+                                        web_files = await element.text_content()
+                                        print(web_files)
 
-                            # Click the "Generate TTS File" button
-                            await page.get_by_role("button", name="Generate TTS File").click()
-                            await asyncio.sleep(1)
+                                        # Click on the phrase
+                                        await page.get_by_text(phrase_name, exact=True).click()
+                                        update_progress(progress, f"Clicked on {phrase_name}")
+                                        await asyncio.sleep(1)
 
-                            # Click on Engine 1
-                            await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
-                            # Click on Engine 2
-                            await page.get_by_text("Engine 2", exact=True).click()
+                                        # Click the "Generate TTS File" button
+                                        await page.get_by_role("button", name="Generate TTS File").click()
+                                        await asyncio.sleep(1)
 
-                            # Generate TTS for each voice
-                            for j, voice in enumerate(voices):
-                                progress = 60 + (j * 30 // len(voices))
-                                update_progress(progress, f"Generating TTS with {voice} voice...")
+                                        # Click on Engine 1
+                                        await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
+                                        # Click on Engine 2
+                                        await page.get_by_text("Engine 2", exact=True).click()
 
-                                await asyncio.sleep(1)
-                                if j == 0:
-                                    # Click on the first dialect
-                                    await page.locator("#aSelectedDialects svg").click()
-                                else:
-                                    # Click on the next dialect
-                                    await page.locator("#aSelectedDialects svg").nth(j+1).click()
-                                await asyncio.sleep(1)
-                                # Click on the selected voice
-                                await page.get_by_text(voice, exact=True).click()
+                                        # Generate TTS for each voice
+                                        for j, voice in enumerate(voices):
+                                            if phrase_name in web_files:
+                                                await asyncio.sleep(1)
+                                                if j == 0:
+                                                    # Click on the first dialect
+                                                    await page.locator("#aSelectedDialects svg").click()
+                                                else:
+                                                    # Click on the next dialect
+                                                    await page.locator("#aSelectedDialects svg").nth(j+1).click()
+                                                await asyncio.sleep(1)
+                                                # Click on the selected voice
+                                                await page.get_by_text(voice, exact=True).click()
 
-                            # Click the "Generate" button
-                            await page.locator("#phrase-tts-dialog__tts-btn").click()
-                            await asyncio.sleep(3)
+                                        # Click the "Generate" button
+                                        await page.locator("#phrase-tts-dialog__tts-btn").click()
+                                        await asyncio.sleep(3)
 
-                            update_progress(95, f"TTS generation completed for {phrase_name}")
+                                except Exception as e:
+                                    update_progress(progress, f"Error generating TTS for {phrase_name}: {str(e)}")
 
                         except Exception as e:
-                            update_progress(60, f"Error generating TTS for {phrase_name}: {str(e)}")
+                            update_progress(progress, f"Exception occurred: {str(e)}")
 
-                        update_progress(100, "Phrase added and TTS generated successfully!")
+                        update_progress(100, "TTS generated successfully!")
 
                     elif config['operation_type'] == 'generate_tts':
                         update_progress(30, "Generating TTS for phrases...")
@@ -3063,7 +3354,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                 if not wav_org_file or not wav_org_file.get('filename'):
                                     continue
 
-                                progress = 10 + (i * 15 // total_phrases)
+                                progress = 10 + (i * 30 // total_phrases)  # 10% to 40%
                                 update_progress(progress, f"Adding phrase: {phrase_name}")
 
                                 try:
@@ -3102,7 +3393,13 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                     update_progress(progress, f'Error in adding phrases: {str(e)}')
 
                             # SECOND: Upload sound (LITERALLY copy generate_tts function until phrase is opened)
-                            update_progress(30, "Uploading sound files for phrases...")
+                            update_progress(40, "Uploading sound files for phrases...")
+                            
+                            # Set dropdown to "File Name" ONCE at the beginning
+                            await page.locator("#phrases__search_for svg").click()
+                            await page.wait_for_selector("#react-select-3-option-1", timeout=30000)
+                            await page.locator("#react-select-3-option-1").click()
+                            
                             for i, phrase_data in enumerate(config['phrases_data']):
                                 phrase_name = phrase_data['phrase_name']
                                 wav_org_file = phrase_data.get('wav_org_file')
@@ -3111,7 +3408,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                 if not wav_org_file or not wav_org_file.get('filename'):
                                     continue
 
-                                progress = 30 + (i * 60 // total_phrases)
+                                progress = 40 + (i * 55 // total_phrases)  # 40% to 95%
                                 update_progress(progress, f"Processing phrase: {phrase_name}")
 
                                 # Create temporary file from base64 data
@@ -3120,11 +3417,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                 with open(temp_file_path, 'wb') as f:
                                     f.write(base64.b64decode(wav_org_file['content']))
 
-                                # Search for phrase
-                                await page.locator("#phrases__search_for svg").click()
-                                # Wait for dropdown to appear and become clickable
-                                await page.wait_for_selector("#react-select-3-option-1", timeout=30000)
-                                await page.locator("#react-select-3-option-1").click()
+                                # Search for phrase (dropdown already set to "File Name")
                                 await page.locator("#phrases__search_text").click()
                                 await page.locator("#phrases__search_text").fill(phrase_name)
                                 await page.locator("#phrases__search-btn").click()
@@ -3160,9 +3453,19 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                                 await page.locator("#upload-phrase-dialog__voices svg").click()
                                                 await asyncio.sleep(1)
                                                 
-                                                # Always use option 0
-                                                await page.locator("#react-select-5-option-0").click()
-                                                update_progress(progress, f"Voice Selected: option 0")
+                                                # Wait for voice options to appear and click option 0
+                                                try:
+                                                    await page.wait_for_selector("#react-select-5-option-0", timeout=10000)
+                                                    await page.locator("#react-select-5-option-0").click()
+                                                    update_progress(progress, f"Voice Selected: option 0")
+                                                except Exception as voice_error:
+                                                    # Fallback: try other possible option selectors
+                                                    try:
+                                                        await page.wait_for_selector("[id*='react-select'][id*='option-0']", timeout=5000)
+                                                        await page.locator("[id*='react-select'][id*='option-0']").first.click()
+                                                        update_progress(progress, f"Voice Selected: fallback option 0")
+                                                    except Exception:
+                                                        update_progress(progress, f"Warning: Could not select voice, using default")
 
                                                 # Click the "Upload" button
                                                 await page.locator("#upload-phrase-dialog__upload-btn").click()
