@@ -1026,7 +1026,7 @@ class PhrasesDataManager(DataManager):
     def update_phrase(self, phrase_id, updated_data):
         """Update an existing phrase by ID"""
         data = self.load_data()
-        
+
         for i, phrase in enumerate(data['phrases']):
             if phrase.get('id') == phrase_id:
                 # Update the phrase data while preserving id and created_at
@@ -1035,7 +1035,7 @@ class PhrasesDataManager(DataManager):
                 if 'created_at' not in data['phrases'][i]:
                     from datetime import datetime
                     data['phrases'][i]['created_at'] = datetime.now().isoformat()
-                
+
                 self.save_data(data)
                 print(f"Updated phrase with ID: {phrase_id}")
                 return True
@@ -1696,26 +1696,26 @@ async def delete_converted_file(filename: str):
         # Check if file is used by any phrases
         phrases_using_file = []
         all_phrases = phrases_data_manager.get_all_phrases()
-        
+
         for phrase in all_phrases:
             if phrase.get('wav_org_file') and phrase['wav_org_file'].get('filename') == filename:
                 phrases_using_file.append(phrase['phrase_name'])
-        
+
         # If file is in use, return warning (but still allow deletion)
         if phrases_using_file:
             print(f"Warning: File {filename} is used by phrases: {phrases_using_file}")
-        
+
         # Delete the file from storage
         success = await delete_converted_file_from_storage(filename)
-        
+
         if success:
             # Remove from memory cache if present
             if hasattr(app.state, 'converted_audio_cache'):
                 app.state.converted_audio_cache = [
-                    f for f in app.state.converted_audio_cache 
+                    f for f in app.state.converted_audio_cache
                     if f.get('filename') != filename
                 ]
-            
+
             # Update phrases that were using this file
             if phrases_using_file:
                 for phrase in all_phrases:
@@ -1723,20 +1723,20 @@ async def delete_converted_file(filename: str):
                         # Remove the file reference from the phrase
                         phrase['wav_org_file'] = None
                         phrases_data_manager.update_phrase(phrase['id'], phrase)
-                
+
                 return {
-                    "success": True, 
+                    "success": True,
                     "message": f"File {filename} deleted successfully. Removed from {len(phrases_using_file)} phrase(s).",
                     "affected_phrases": phrases_using_file
                 }
             else:
                 return {
-                    "success": True, 
+                    "success": True,
                     "message": f"File {filename} deleted successfully."
                 }
         else:
             raise HTTPException(status_code=404, detail="File not found")
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1749,19 +1749,19 @@ async def serve_audio_file(filename: str):
     try:
         # Load converted files from storage
         stored_files = await load_converted_files_from_storage()
-        
+
         # Also check memory cache
         if hasattr(app.state, 'converted_audio_cache'):
             for cache_file in app.state.converted_audio_cache:
                 if not any(f['filename'] == cache_file['filename'] for f in stored_files):
                     stored_files.append(cache_file)
-        
+
         # Find the requested file
         audio_file = next((f for f in stored_files if f['filename'] == filename), None)
-        
+
         if not audio_file:
             raise HTTPException(status_code=404, detail="Audio file not found")
-        
+
         # Decode base64 content
         import base64
         try:
@@ -1769,10 +1769,10 @@ async def serve_audio_file(filename: str):
         except Exception as e:
             print(f"Error decoding audio file {filename}: {e}")
             raise HTTPException(status_code=500, detail="Error processing audio file")
-        
+
         # Return audio response with proper headers
         from fastapi.responses import Response
-        
+
         return Response(
             content=audio_content,
             media_type="audio/wav",
@@ -1783,7 +1783,7 @@ async def serve_audio_file(filename: str):
                 "Content-Length": str(len(audio_content))
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1832,7 +1832,7 @@ async def update_phrase(
             try:
                 converted_files = await load_converted_files_from_storage()
                 selected_file = next((f for f in converted_files if f['filename'] == converted_file_name), None)
-                
+
                 if selected_file:
                     wav_org_file = {
                         "filename": selected_file["filename"],
@@ -1856,12 +1856,12 @@ async def update_phrase(
 
         # Update the phrase
         success = phrases_data_manager.update_phrase(phrase_id, updated_data)
-        
+
         if success:
             return {"success": True, "message": f"Phrase {phrase_id} updated successfully"}
         else:
             raise HTTPException(status_code=404, detail="Phrase not found")
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1898,7 +1898,7 @@ async def delete_converted_file_from_storage(filename: str):
     """Delete a converted audio file from persistent storage"""
     try:
         converted_files_path = "converted_audio_files.json"
-        
+
         # Load existing files
         try:
             with open(converted_files_path, 'r') as f:
@@ -1906,11 +1906,11 @@ async def delete_converted_file_from_storage(filename: str):
         except FileNotFoundError:
             print(f"No converted_audio_files.json found, cannot delete {filename}")
             return False
-        
+
         # Find and remove the file
         original_count = len(stored_files)
         stored_files = [f for f in stored_files if f.get('filename') != filename]
-        
+
         if len(stored_files) < original_count:
             # Save updated list
             with open(converted_files_path, 'w') as f:
@@ -1920,7 +1920,7 @@ async def delete_converted_file_from_storage(filename: str):
         else:
             print(f"File not found in storage: {filename}")
             return False
-            
+
     except Exception as e:
         print(f"Error deleting converted file from storage: {e}")
         return False
@@ -2194,21 +2194,21 @@ async def convert_audio_file(audio_file: UploadFile = File(...)):
         print(f"DEBUG: base_name.startswith('org_') = {base_name.startswith('org_')}")
         print(f"DEBUG: base_name.endswith('.org_') = {base_name.endswith('.org_')}")
         print(f"DEBUG: filename.endswith('.org_.wav') = {audio_file.filename.endswith('.org_.wav')}")
-        
+
         is_direct_org_wav = (
             (file_ext == '.wav' and base_name.startswith('org_')) or
             (file_ext == '.wav' and base_name.endswith('.org_')) or
             (audio_file.filename.endswith('.org_.wav'))
         )
-        
+
         print(f"DEBUG: is_direct_org_wav = {is_direct_org_wav}")
-        
+
         if is_direct_org_wav:
             print(f"File {audio_file.filename} is already in org_.wav format, storing directly")
-            
+
             # Read the file content directly
             content = await audio_file.read()
-            
+
             import base64
             converted_file_data = {
                 "filename": audio_file.filename,
@@ -3172,17 +3172,17 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                         # Process all selected phrases for TTS generation
                         total_phrases = len(config['phrases_data'])
                         update_progress(10, f"Starting TTS generation for {total_phrases} phrases...")
-                        
+
                         try:
-                            # FIRST: Add all phrases 
+                            # FIRST: Add all phrases
                             for i, phrase_data in enumerate(config['phrases_data']):
                                 phrase_name = phrase_data['phrase_name']
                                 verbiage = phrase_data['verbiage']
                                 description = phrase_data.get('description', '')
-                                
+
                                 progress = 10 + (i * 30 // total_phrases)  # 10% to 40%
                                 update_progress(progress, f"Adding phrase: {phrase_name}")
-                                
+
                                 try:
                                     # Click Add Phrase button
                                     await page.get_by_role("button", name="Add Phrase(s)").click()
@@ -3206,15 +3206,15 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                             # SECOND: Generate TTS for all phrases
                             update_progress(40, "Generating TTS for all phrases...")
                             voices = ['Bob', 'Julie', 'Juanita']
-                            
+
                             # Set dropdown to "File Name" ONCE at the beginning
                             await page.locator("#phrases__search_for svg").click()
                             await page.wait_for_selector("#react-select-3-option-1", timeout=30000)
                             await page.locator("#react-select-3-option-1").click()
-                            
+
                             for i, phrase_data in enumerate(config['phrases_data']):
                                 phrase_name = phrase_data['phrase_name']
-                                
+
                                 progress = 40 + (i * 55 // total_phrases)  # 40% to 95%
                                 update_progress(progress, f"Generating TTS for: {phrase_name}")
 
@@ -3394,12 +3394,12 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                             # SECOND: Upload sound (LITERALLY copy generate_tts function until phrase is opened)
                             update_progress(40, "Uploading sound files for phrases...")
-                            
+
                             # Set dropdown to "File Name" ONCE at the beginning
                             await page.locator("#phrases__search_for svg").click()
                             await page.wait_for_selector("#react-select-3-option-1", timeout=30000)
                             await page.locator("#react-select-3-option-1").click()
-                            
+
                             for i, phrase_data in enumerate(config['phrases_data']):
                                 phrase_name = phrase_data['phrase_name']
                                 wav_org_file = phrase_data.get('wav_org_file')
@@ -3452,7 +3452,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                                 await asyncio.sleep(2)
                                                 await page.locator("#upload-phrase-dialog__voices svg").click()
                                                 await asyncio.sleep(1)
-                                                
+
                                                 # Wait for voice options to appear and click option 0
                                                 try:
                                                     await page.wait_for_selector("#react-select-5-option-0", timeout=10000)
@@ -3700,6 +3700,7 @@ async def run_specific_calls_logic(page, config, update_progress):
     update_progress(15, f"Starting automation for {len(calls_to_process)} calls for {agent_info['folder']}")
 
     download_counter = 1
+    saved_files = []  # Track all saved files
 
     update_progress(18, "Navigating to Call Recording Report...")
     try:
@@ -3755,6 +3756,8 @@ async def run_specific_calls_logic(page, config, update_progress):
                 duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
                 if duration_in_row == call_data['duration']:
                     update_progress(progress, f"Found matching duration {duration_in_row}s, downloading...")
+                    await asyncio.sleep(1.0)  # Much longer delay so message isn't overwritten
+
                     download_button = row.locator("div.icon--audio-download.clickable")
                     async with page.expect_download() as download_info:
                         await download_button.click()
@@ -3766,8 +3769,8 @@ async def run_specific_calls_logic(page, config, update_progress):
                     final_filename = f"{name}-{download_counter}{ext}"
                     target_path = os.path.join(target_dir, final_filename)
 
-                    update_progress(progress, f"Saved: {final_filename}")
                     shutil.move(await download.path(), target_path)
+                    saved_files.append(final_filename)  # Add to saved files list
 
                     download_counter += 1
                     found_match = True
@@ -3778,6 +3781,11 @@ async def run_specific_calls_logic(page, config, update_progress):
 
         except Exception as e:
             update_progress(progress, f"No results found for {call_data['phone']}: {str(e)[:50]}")
+
+    # Show all saved files at the end
+    if saved_files:
+        files_list = ", ".join(saved_files)
+        update_progress(88, f"Saved {len(saved_files)} files: {files_list}")
 
     update_progress(90, f"Completed processing {len(calls_to_process)} calls. Downloaded {download_counter-1} files.")
 
@@ -3809,6 +3817,7 @@ async def run_all_calls_logic(page, config, update_progress):
     update_progress(15, f"Processing {len(phone_numbers)} phone numbers for {agent_info['folder']}")
 
     download_counter = 1
+    saved_files = []  # Track all saved files
 
     update_progress(18, "Navigating to Call Recording Report...")
     try:
@@ -3845,7 +3854,7 @@ async def run_all_calls_logic(page, config, update_progress):
 
     for i, phone in enumerate(phone_numbers):
         progress = 25 + int(((i + 1) / len(phone_numbers)) * 65)
-        update_progress(progress, f"Processing phone {i+1}/{len(phone_numbers)}: {phone}")
+        update_progress(progress, f"Searching call {i+1}/{len(phone_numbers)}: {phone}")
 
         await page.locator("#search-panel__phone-dialed").clear()
         await page.locator("#search-panel__phone-dialed").fill(phone)
@@ -3858,27 +3867,49 @@ async def run_all_calls_logic(page, config, update_progress):
 
             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
 
-            update_progress(progress, f"Found {len(data_rows)} recording(s) for phone {phone}. Downloading all...")
+            update_progress(progress, f"Found {len(data_rows)} recording(s) for {phone}. Downloading all...")
+            await asyncio.sleep(0.5)  # Give time to see the count message
 
-            for row in data_rows:
-                download_button = row.locator("div.icon--audio-download.clickable")
-                async with page.expect_download() as download_info:
-                    await download_button.click()
+            for j, row in enumerate(data_rows):
+                try:
+                    # Get the duration from the row to show consistent messaging
+                    duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
+                    try:
+                        update_progress(progress, f"Downloading recordings ({duration_in_row}s)...")
+                        await asyncio.sleep(0.5)  # Longer delay to ensure message is visible
+                    except Exception as msg_error:
+                        print(f"Progress message error: {msg_error}")
 
-                download = await download_info.value
-                base_filename = download.suggested_filename
-                name, ext = os.path.splitext(base_filename)
+                    download_button = row.locator("div.icon--audio-download.clickable")
+                    async with page.expect_download() as download_info:
+                        await download_button.click()
 
-                final_filename = f"{name}-{download_counter}{ext}"
-                target_path = os.path.join(target_dir, final_filename)
+                    download = await download_info.value
+                    base_filename = download.suggested_filename
+                    name, ext = os.path.splitext(base_filename)
 
-                update_progress(progress, f"Saving file: {final_filename}")
-                shutil.move(await download.path(), target_path)
+                    final_filename = f"{name}-{download_counter}{ext}"
+                    target_path = os.path.join(target_dir, final_filename)
 
-                download_counter += 1
+                    shutil.move(await download.path(), target_path)
+                    saved_files.append(final_filename)  # Add to saved files list
+
+                    download_counter += 1
+
+                except Exception as download_error:
+                    try:
+                        update_progress(progress, f"Failed to download recording {j+1}: {str(download_error)}")
+                    except Exception as msg_error:
+                        print(f"Progress message error: {msg_error}")
+                    continue
 
         except Exception as e:
             update_progress(progress, f"No recordings found for phone: {phone}")
+
+    # Show all saved files at the end
+    if saved_files:
+        files_list = ", ".join(saved_files)
+        update_progress(88, f"Saved {len(saved_files)} files: {files_list}")
 
     update_progress(90, f"Completed processing {len(phone_numbers)} phone numbers. Downloaded {download_counter-1} files.")
 

@@ -448,6 +448,131 @@
         let targetProgressValue = 0.0;
         let animationTimer = null;
 
+        // PROGRESS PERSISTENCE MODULE
+        const ProgressPersistence = {
+            // Storage keys for different projects
+            getStorageKey: function(projectName) {
+                return `livevox_progress_${projectName}`;
+            },
+
+            // Save progress state to localStorage
+            saveProgressState: function(projectName, state) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const progressData = {
+                        taskId: state.taskId,
+                        progress: state.progress || 0,
+                        targetProgress: state.targetProgress || 0,
+                        currentDisplay: state.currentDisplay || 0,
+                        status: state.status || 'running',
+                        startTime: state.startTime || new Date().toISOString(),
+                        logs: state.logs || [],
+                        lastMessage: state.lastMessage || '',
+                        isVisible: state.isVisible || false,
+                        timestamp: new Date().toISOString()
+                    };
+                    localStorage.setItem(storageKey, JSON.stringify(progressData));
+                    console.log(`Progress state saved for ${projectName}:`, progressData);
+                } catch (error) {
+                    console.error('Error saving progress state:', error);
+                }
+            },
+
+            // Load progress state from localStorage
+            loadProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const stored = localStorage.getItem(storageKey);
+                    if (stored) {
+                        const progressData = JSON.parse(stored);
+                        console.log(`Progress state loaded for ${projectName}:`, progressData);
+                        return progressData;
+                    }
+                } catch (error) {
+                    console.error('Error loading progress state:', error);
+                }
+                return null;
+            },
+
+            // Clear progress state (when task completes/fails)
+            clearProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    localStorage.removeItem(storageKey);
+                    console.log(`Progress state cleared for ${projectName}`);
+                } catch (error) {
+                    console.error('Error clearing progress state:', error);
+                }
+            },
+
+            // Check if task is still active
+            isTaskActive: function(progressData) {
+                if (!progressData || !progressData.taskId) return false;
+                
+                // Consider task active if status is running and not too old
+                const age = new Date() - new Date(progressData.timestamp);
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+                
+                return progressData.status === 'running' && age < maxAge;
+            }
+        };
+
+        // Resume progress from persisted state
+        function resumeProgressFromState() {
+            const projectName = 'hci_summary';
+            const savedState = ProgressPersistence.loadProgressState(projectName);
+            
+            if (savedState && ProgressPersistence.isTaskActive(savedState)) {
+                console.log('Resuming progress from saved state:', savedState);
+                
+                // Restore global variables
+                currentTaskId = savedState.taskId;
+                currentProgressDisplay = savedState.currentDisplay || 0;
+                targetProgressValue = savedState.targetProgress || 0;
+                lastLogMessage = savedState.lastMessage || '';
+                
+                // Show progress container
+                const progressContainer = document.getElementById('progressContainer');
+                progressContainer.style.display = 'block';
+                
+                // Show stop button
+                const stopBtn = document.querySelector('.btn-danger');
+                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                    stopBtn.style.display = 'inline-block';
+                }
+                
+                // Restore progress bar state
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = `${currentProgressDisplay}%`;
+                progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+                
+                if (savedState.status === 'running') {
+                    progressFill.classList.add('pulsing');
+                }
+                
+                // Restore log content
+                const logContent = document.getElementById('logContent');
+                logContent.innerHTML = '';
+                
+                if (savedState.logs && savedState.logs.length > 0) {
+                    savedState.logs.forEach(logMessage => {
+                        const logEntry = document.createElement('div');
+                        logEntry.textContent = logMessage;
+                        logContent.appendChild(logEntry);
+                    });
+                    logContent.scrollTop = logContent.scrollHeight;
+                }
+                
+                // Resume polling and animation if task is still running
+                if (savedState.status === 'running' && currentTaskId) {
+                    startSmoothAnimation();
+                    startProgressPolling();
+                    
+                    console.log('Progress polling and animation resumed');
+                }
+            }
+        }
+
         // Load agents on page load and set default date
         document.addEventListener('DOMContentLoaded', function() {
             loadHciAgents();
@@ -457,6 +582,9 @@
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
             document.getElementById('reportDate').value = yesterdayStr;
+            
+            // Check for and resume any active progress
+            resumeProgressFromState();
         });
 
         async function loadHciAgents() {
@@ -756,10 +884,25 @@
             }
             
             const initialLog = document.createElement('div');
-            initialLog.textContent = `Starting HCI automation for ${dateStr}...`;
+            const initialMessage = `Starting HCI automation for ${dateStr}...`;
+            initialLog.textContent = initialMessage;
             logContent.appendChild(initialLog);
             
-            lastLogMessage = `Starting HCI automation for ${dateStr}...`;
+            lastLogMessage = initialMessage;
+            
+            // Save initial progress state
+            const projectName = 'hci_summary';
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: 0,
+                targetProgress: 0,
+                currentDisplay: 0,
+                status: 'running',
+                startTime: new Date().toISOString(),
+                logs: [initialMessage],
+                lastMessage: initialMessage,
+                isVisible: true
+            });
             
             // Start smooth animation
             startSmoothAnimation();
@@ -784,10 +927,25 @@
                             targetProgressValue = 100.0;
                             updateProgress(100, "HCI automation completed! Preparing ZIP download...");
                             
+                            // Save completed state
+                            const projectName = 'hci_summary';
+                            const logContent = document.getElementById('logContent');
+                            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+                            
+                            ProgressPersistence.saveProgressState(projectName, {
+                                taskId: currentTaskId,
+                                progress: 100,
+                                targetProgress: 100,
+                                currentDisplay: 100,
+                                status: 'completed',
+                                logs: currentLogs,
+                                lastMessage: 'HCI automation completed! Preparing ZIP download...',
+                                isVisible: true
+                            });
+                            
                             // Trigger ZIP download
                             setTimeout(() => {
                                 window.location.href = `/api/automation/${currentTaskId}/download`;
-                                // DON'T set currentTaskId = null here immediately!
                                 
                                 updateProgress(100, "✅ Download started! Check your browser downloads.");
                                 
@@ -797,17 +955,39 @@
                                     stopBtn.style.display = 'none';
                                 }
                                 
-                                // Clear currentTaskId after a longer delay to allow download to start
+                                // Clear progress state after successful completion
                                 setTimeout(() => {
+                                    ProgressPersistence.clearProgressState(projectName);
                                     currentTaskId = null;
-                                }, 5000);
+                                }, 3000);
                                 
                             }, 1000);
                             
                         } else if (status.status === 'failed') {
                             clearInterval(progressInterval);
-                            currentTaskId = null;
                             updateProgress(0, "❌ HCI automation failed: " + status.message);
+                            
+                            // Save failed state and clear after a delay
+                            const projectName = 'hci_summary';
+                            const logContent = document.getElementById('logContent');
+                            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+                            
+                            ProgressPersistence.saveProgressState(projectName, {
+                                taskId: currentTaskId,
+                                progress: 0,
+                                targetProgress: 0,
+                                currentDisplay: 0,
+                                status: 'failed',
+                                logs: currentLogs,
+                                lastMessage: "❌ HCI automation failed: " + status.message,
+                                isVisible: true
+                            });
+                            
+                            // Clear progress state after showing error
+                            setTimeout(() => {
+                                ProgressPersistence.clearProgressState(projectName);
+                                currentTaskId = null;
+                            }, 5000);
                             
                             const stopBtn = document.querySelector('.btn-danger');
                             if (stopBtn && stopBtn.textContent.includes('Stop')) {
@@ -843,6 +1023,21 @@
                 logContent.scrollTop = logContent.scrollHeight;
                 lastLogMessage = message;
             }
+
+            // Save progress state to localStorage
+            const projectName = 'hci_summary';
+            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+            
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: progress,
+                targetProgress: targetProgressValue,
+                currentDisplay: currentProgressDisplay,
+                status: 'running',
+                logs: currentLogs,
+                lastMessage: lastLogMessage,
+                isVisible: true
+            });
         }
 
         async function stopAutomation() {
@@ -864,7 +1059,6 @@
                 }
                 
                 // Clean up frontend regardless of backend response
-                currentTaskId = null;
                 clearInterval(progressInterval);
                 
                 // STOP THE SMOOTH ANIMATION
@@ -883,6 +1077,13 @@
                 progressFill.classList.remove('pulsing');
                 
                 updateProgress(0, "🛑 Automation stopped by user");
+                
+                // Clear progress state when stopped by user
+                const projectName = 'hci_summary';
+                setTimeout(() => {
+                    ProgressPersistence.clearProgressState(projectName);
+                    currentTaskId = null;
+                }, 2000);
                 
                 // Hide the stop button
                 const stopBtn = document.querySelector('.btn-danger');

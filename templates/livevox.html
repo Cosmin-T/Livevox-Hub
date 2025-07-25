@@ -75,7 +75,7 @@
             display: flex;
             border-bottom: 2px solid #000000;
             margin-bottom: 30px;
-            justify-content: center; 
+            justify-content: center;
         }
 
         .tab {
@@ -434,7 +434,7 @@
                 </svg>
                 Back to Hub
             </a>
-            
+
         </aside>
 
         <main class="main-content">
@@ -450,18 +450,18 @@
                     </svg>
                     Agent & Call Management
                 </button>
-                <button class="tab" onclick="showTab('specific')" style="display: flex; align-items: center; gap: 8px;">
+                <button class="tab" onclick="showTab('all')" style="display: flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
                         <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
                     </svg>
-                    Specific Calls
+                    All Calls
                 </button>
-                <button class="tab" onclick="showTab('all')" style="display: flex; align-items: center; gap: 8px;">
+                <button class="tab" onclick="showTab('specific')" style="display: flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM5 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
                     </svg>
-                    All Calls
+                    Specific Calls
                 </button>
             </div>
 
@@ -564,7 +564,6 @@
                         Start Automation
                     </button>
                 </div>
-
                 <div class="section">
                     <h2>How This Works</h2>
                     <p>• First <strong style="font-size: 1.1em;">configure</strong> agents in the <strong style="font-size: 1.1em;">Agent & Call Management</strong> tab, it does <strong style="font-size: 1.1em;">not need</strong> call configuration.</p>
@@ -647,21 +646,90 @@
         let targetProgressValue = 0.0;    // The precise value from the worker (e.g. 30)
         let animationTimer = null;
 
+        // PROGRESS PERSISTENCE MODULE
+        const ProgressPersistence = {
+            // Storage keys for different projects
+            getStorageKey: function(projectName) {
+                return `livevox_progress_${projectName}`;
+            },
+
+            // Save progress state to localStorage
+            saveProgressState: function(projectName, state) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const progressData = {
+                        taskId: state.taskId,
+                        progress: state.progress || 0,
+                        targetProgress: state.targetProgress || 0,
+                        currentDisplay: state.currentDisplay || 0,
+                        status: state.status || 'running',
+                        startTime: state.startTime || new Date().toISOString(),
+                        logs: state.logs || [],
+                        lastMessage: state.lastMessage || '',
+                        isVisible: state.isVisible || false,
+                        timestamp: new Date().toISOString()
+                    };
+                    localStorage.setItem(storageKey, JSON.stringify(progressData));
+                    console.log(`Progress state saved for ${projectName}:`, progressData);
+                } catch (error) {
+                    console.error('Error saving progress state:', error);
+                }
+            },
+
+            // Load progress state from localStorage
+            loadProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const stored = localStorage.getItem(storageKey);
+                    if (stored) {
+                        const progressData = JSON.parse(stored);
+                        console.log(`Progress state loaded for ${projectName}:`, progressData);
+                        return progressData;
+                    }
+                } catch (error) {
+                    console.error('Error loading progress state:', error);
+                }
+                return null;
+            },
+
+            // Clear progress state (when task completes/fails)
+            clearProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    localStorage.removeItem(storageKey);
+                    console.log(`Progress state cleared for ${projectName}`);
+                } catch (error) {
+                    console.error('Error clearing progress state:', error);
+                }
+            },
+
+            // Check if task is still active
+            isTaskActive: function(progressData) {
+                if (!progressData || !progressData.taskId) return false;
+
+                // Consider task active if status is running and not too old
+                const age = new Date() - new Date(progressData.timestamp);
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+                return progressData.status === 'running' && age < maxAge;
+            }
+        };
+
         // Tab management
         function showTab(tabName) {
             // Hide all tab content sections
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            
+
             // Deactivate all main tab buttons
             document.querySelectorAll('.tabs .tab').forEach(button => {
                 button.classList.remove('active');
             });
-            
+
             // Show the correct tab content
             document.getElementById(tabName).classList.add('active');
-            
+
             // Find the main tab button that corresponds to tabName and activate it
             const mainTabToActivate = document.querySelector(`.tabs .tab[onclick="showTab('${tabName}')"]`);
             if (mainTabToActivate) {
@@ -669,23 +737,75 @@
             }
         }
 
+        // Resume progress from persisted state
+        function resumeProgressFromState() {
+            const projectName = 'call_automation';
+            const savedState = ProgressPersistence.loadProgressState(projectName);
+
+            if (savedState && ProgressPersistence.isTaskActive(savedState)) {
+                console.log('Resuming progress from saved state:', savedState);
+
+                // Restore global variables
+                currentTaskId = savedState.taskId;
+                currentProgressDisplay = savedState.currentDisplay || 0;
+                targetProgressValue = savedState.targetProgress || 0;
+                lastLogMessage = savedState.lastMessage || '';
+
+                // Show progress container
+                const progressContainer = document.getElementById('progressContainer');
+                progressContainer.style.display = 'block';
+
+                // Restore progress bar state
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = `${currentProgressDisplay}%`;
+                progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+
+                if (savedState.status === 'running') {
+                    progressFill.classList.add('pulsing');
+                }
+
+                // Restore log content
+                const logContent = document.getElementById('logContent');
+                logContent.innerHTML = '';
+
+                if (savedState.logs && savedState.logs.length > 0) {
+                    savedState.logs.forEach(logMessage => {
+                        const logEntry = document.createElement('div');
+                        logEntry.textContent = logMessage;
+                        logContent.appendChild(logEntry);
+                    });
+                    logContent.scrollTop = logContent.scrollHeight;
+                }
+
+                // Resume polling and animation if task is still running
+                if (savedState.status === 'running' && currentTaskId) {
+                    startSmoothAnimation();
+                    startProgressPolling();
+
+                    console.log('Progress polling and animation resumed');
+                }
+            }
+        }
+
         // Load agents on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadAgents();
             loadAgentSelects();
+            // Check for and resume any active progress
+            resumeProgressFromState();
         });
 
         function startSmoothAnimation() {
             if (animationTimer) {
                 clearInterval(animationTimer);
             }
-            
+
             animationTimer = setInterval(animateProgress, 50); // 50ms for smooth animation
         }
 
         function animateProgress() {
             const progressFill = document.getElementById('progressFill');
-            
+
             // Stop the timer only when the job is done and we've reached 100%
             if (targetProgressValue >= 100 && currentProgressDisplay >= 100) {
                 clearInterval(animationTimer);
@@ -705,7 +825,7 @@
                     increment = 0.1;
                 }
                 currentProgressDisplay += increment;
-            } 
+            }
             // If we have reached the target, but the final target isn't 100 yet, keep moving forward very slowly.
             else if (targetProgressValue < 100) {
                 currentProgressDisplay += 0.01; // This is the "never stop" part
@@ -715,7 +835,7 @@
             if (currentProgressDisplay > 99.9 && targetProgressValue < 100) {
                 currentProgressDisplay = 99.9;
             }
-            
+
             // Update the UI
             progressFill.style.width = `${currentProgressDisplay}%`;
             progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
@@ -725,10 +845,10 @@
             try {
                 const response = await fetch('/api/agents');
                 const agents = await response.json();
-                
+
                 const agentList = document.getElementById('agentList');
                 agentList.innerHTML = '';
-                
+
                 for (const [agentId, agent] of Object.entries(agents)) {
                     const agentDiv = document.createElement('div');
                     agentDiv.className = 'agent-item';
@@ -745,7 +865,7 @@
                         <button class="btn btn-secondary" onclick="event.stopPropagation(); editAgent('${agentId}', ${JSON.stringify(agent).replace(/"/g, '&quot;')})" style="padding: 5px 10px; font-size: 12px;">Edit</button>
                         <button class="btn btn-danger" onclick="event.stopPropagation(); deleteAgent('${agentId}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
                     `;
-                    
+
                     agentDiv.appendChild(agentText);
                     agentDiv.appendChild(buttonsDiv);
                     agentList.appendChild(agentDiv);
@@ -760,19 +880,19 @@
             try {
                 const response = await fetch('/api/agents');
                 const agents = await response.json();
-                
+
                 const select1 = document.getElementById('agentSelect1');
                 const select2 = document.getElementById('agentSelect2');
-                
+
                 select1.innerHTML = '<option value="">Select an agent...</option>';
                 select2.innerHTML = '<option value="">Select an agent...</option>';
-                
+
                 for (const [agentId, agent] of Object.entries(agents)) {
                     const option1 = document.createElement('option');
                     option1.value = agentId;
                     option1.textContent = `${agentId} (${agent.folder})`;
                     select1.appendChild(option1);
-                    
+
                     const option2 = document.createElement('option');
                     option2.value = agentId;
                     option2.textContent = `${agentId} (${agent.folder})`;
@@ -788,16 +908,16 @@
             document.querySelectorAll('.agent-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            
+
             // Add selection to clicked item
             element.classList.add('selected');
             selectedAgent = agentId;
             selectedAgentData = agentData;
-            
+
             // Clear call selection
             selectedCallIndex = null;
             selectedCallData = null;
-            
+
             // Load calls for this agent
             loadCalls(agentId);
         }
@@ -806,10 +926,10 @@
             try {
                 const response = await fetch(`/api/agents/${agentId}/calls`);
                 const calls = await response.json();
-                
+
                 const callTable = document.getElementById('callTable');
                 callTable.innerHTML = '';
-                
+
                 calls.forEach((call, index) => {
                     const row = document.createElement('tr');
                     row.style.cursor = 'pointer';
@@ -834,7 +954,7 @@
             document.querySelectorAll('#callTable tr').forEach(row => {
                 row.classList.remove('selected');
             });
-            
+
             // Add selection to clicked row
             element.classList.add('selected');
             selectedCallIndex = index;
@@ -847,7 +967,7 @@
             document.getElementById('modalAgentId').value = agent ? agent.id : '';
             document.getElementById('modalFolder').value = agent ? agent.folder : '';
             document.getElementById('modalLocatorId').value = agent ? agent.locator_id : '';
-            
+
             document.getElementById('agentModal').style.display = 'block';
         }
 
@@ -856,7 +976,7 @@
                 alert('Please select an agent first');
                 return;
             }
-            
+
             editingCall = call !== null;
             document.getElementById('modalPhone').value = call ? call.phone : '';
             document.getElementById('modalDuration').value = call ? call.duration : '';
@@ -873,40 +993,40 @@
             const agentId = document.getElementById('modalAgentId').value;
             const folder = document.getElementById('modalFolder').value;
             const locatorId = document.getElementById('modalLocatorId').value;
-            
+
             if (!agentId || !folder || !locatorId) {
                 alert('Please fill in all fields');
                 return;
             }
-            
+
             const formData = new FormData();
             formData.append('agent_id', agentId);
             formData.append('folder', folder);
             formData.append('locator_id', locatorId);
-            
+
             try {
                 let url = '/api/agents';
                 let method = 'POST';
-                
+
                 if (editingAgent) {
                     url = `/api/agents/${selectedAgent}`;
                     method = 'PUT';
                 }
-                
+
                 console.log('Saving agent:', method, url, 'Data:', {agentId, folder, locatorId});
-                
+
                 const response = await fetch(url, {
                     method: method,
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     console.log('Agent save response:', result);
                     closeModal('agentModal');
                     loadAgents();
                     loadAgentSelects();
-                    
+
                     if (editingAgent) {
                         // Update selected agent data - use new agent ID if it changed
                         selectedAgent = result.new_agent_id || agentId;
@@ -930,35 +1050,35 @@
                 alert('Please select an agent first');
                 return;
             }
-            
+
             const phone = document.getElementById('modalPhone').value;
             const duration = document.getElementById('modalDuration').value;
-            
+
             if (!phone || !duration) {
                 alert('Please fill in all fields');
                 return;
             }
-            
+
             const formData = new FormData();
             formData.append('phone', phone);
             formData.append('duration', duration);
-            
+
             try {
                 let url = `/api/agents/${selectedAgent}/calls`;
                 let method = 'POST';
-                
+
                 if (editingCall && selectedCallIndex !== null) {
                     url = `/api/agents/${selectedAgent}/calls/${selectedCallIndex}`;
                     method = 'PUT';
                 }
-                
+
                 console.log('Saving call:', method, url, 'Phone:', phone, 'Duration:', duration);
-                
+
                 const response = await fetch(url, {
                     method: method,
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     console.log('Call save response:', result);
@@ -987,13 +1107,13 @@
                 alert('Agent ID not provided.');
                 return;
             }
-            
+
             if (confirm(`Are you sure you want to delete agent ${agentId} and all their calls?`)) {
                 try {
                     const response = await fetch(`/api/agents/${agentId}`, { // Use the passed agentId
                         method: 'DELETE'
                     });
-                    
+
                     if (response.ok) {
                         // If the deleted agent was the selected one, clear the selections
                         if (selectedAgent === agentId) {
@@ -1012,7 +1132,7 @@
                 }
             }
         }
-        
+
         async function deleteAllAgents() {
             if (confirm('ARE YOU SURE? This will delete ALL agents and their associated calls. This action cannot be undone.')) {
                 try {
@@ -1046,13 +1166,13 @@
 
         async function deleteCallAtIndex(index) {
             if (!selectedAgent) return;
-            
+
             if (confirm('Are you sure you want to delete this call?')) {
                 try {
                     const response = await fetch(`/api/agents/${selectedAgent}/calls/${index}`, {
                         method: 'DELETE'
                     });
-                    
+
                     if (response.ok) {
                         loadCalls(selectedAgent);
                         // Clear selection if we deleted the selected call
@@ -1095,18 +1215,18 @@
         async function uploadExcel() {
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
-            
+
             if (!file) return;
-            
+
             const formData = new FormData();
             formData.append('file', file);
-            
+
             try {
                 const response = await fetch('/api/upload-excel', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     alert(`Upload successful!\nAgents created: ${result.agents_created}\nCalls added: ${result.calls_added}`);
@@ -1123,7 +1243,7 @@
             } catch (error) {
                 alert('Error uploading file: ' + error.message);
             }
-            
+
             fileInput.value = '';
         }
 
@@ -1142,11 +1262,11 @@
                 alert('Credentials not found. Please return to the Hub page to set your LiveVox credentials.');
                 return;
             }
-            
+
             // Get the rest of the configuration from the active tab
             const agentSelect = document.getElementById(`agentSelect${type === 'specific' ? '1' : '2'}`);
             const startDate = document.getElementById(`startDate${type === 'specific' ? '1' : '2'}`);
-            
+
             let phoneNumbers = '';
             if (type === 'all') {
                 phoneNumbers = document.getElementById('phoneNumbers').value;
@@ -1155,12 +1275,12 @@
                     return;
                 }
             }
-            
+
             if (!agentSelect.value || !startDate.value) {
                 alert('Please fill in all required configuration fields');
                 return;
             }
-            
+
             const formData = new FormData();
             formData.append('function_type', type === 'specific' ? 'specific_calls' : 'all_calls');
             formData.append('agent_id', agentSelect.value);
@@ -1171,14 +1291,14 @@
             if (phoneNumbers) {
                 formData.append('phone_numbers', phoneNumbers);
             }
-            
+
             // The rest of the function (fetch, progress polling, etc.) remains the same...
             try {
                 const response = await fetch('/api/automation/start', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const result = await response.json();
                     currentTaskId = result.task_id;
@@ -1203,26 +1323,40 @@
 
         function showProgress() {
             document.getElementById('progressContainer').style.display = 'block';
-            
+
             // Reset smooth progress animation
             currentProgressDisplay = 0.0;
             targetProgressValue = 0.0;
-            
+
             const progressFill = document.getElementById('progressFill');
             progressFill.style.width = '0%';
             progressFill.textContent = '0.0%';
             progressFill.classList.add('pulsing');
-            
+
             // Clear log content and add initial message
             const logContent = document.getElementById('logContent');
             logContent.innerHTML = '';
-            
+
             const initialLog = document.createElement('div');
             initialLog.textContent = 'Starting automation...';
             logContent.appendChild(initialLog);
-            
+
             lastLogMessage = 'Starting automation...';
-            
+
+            // Save initial progress state
+            const projectName = 'call_automation';
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: 0,
+                targetProgress: 0,
+                currentDisplay: 0,
+                status: 'running',
+                startTime: new Date().toISOString(),
+                logs: ['Starting automation...'],
+                lastMessage: 'Starting automation...',
+                isVisible: true
+            });
+
             // Start smooth animation
             startSmoothAnimation();
         }
@@ -1231,69 +1365,110 @@
             if (progressInterval) {
                 clearInterval(progressInterval);
             }
-            
+
             progressInterval = setInterval(async () => {
                 if (!currentTaskId) return;
-                
+
                 try {
                     const response = await fetch(`/api/automation/${currentTaskId}/status`);
                     if (response.ok) {
                         const status = await response.json();
                         updateProgress(status.progress, status.message);
-                        
+
                         if (status.status === 'completed') {
                             clearInterval(progressInterval);
-                            
+
                             // STOP THE SMOOTH ANIMATION ON COMPLETION
                             if (animationTimer) {
                                 clearInterval(animationTimer);
                                 animationTimer = null;
                             }
-                            
+
                             targetProgressValue = 100.0;
-                            
+
                             // Set final state
                             const progressFill = document.getElementById('progressFill');
                             progressFill.style.width = '100%';
                             progressFill.textContent = '100.0%';
                             progressFill.classList.remove('pulsing');
-                            
+
                             updateProgress(100, "Automation completed! Preparing ZIP download...");
-                            
+
+                            // Save completed state
+                            const projectName = 'call_automation';
+                            const logContent = document.getElementById('logContent');
+                            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+
+                            ProgressPersistence.saveProgressState(projectName, {
+                                taskId: currentTaskId,
+                                progress: 100,
+                                targetProgress: 100,
+                                currentDisplay: 100,
+                                status: 'completed',
+                                logs: currentLogs,
+                                lastMessage: 'Automation completed! Preparing ZIP download...',
+                                isVisible: true
+                            });
+
                             // Trigger ZIP download
                             setTimeout(() => {
                                 window.location.href = `/api/automation/${currentTaskId}/download`;
-                                currentTaskId = null;
-                                
+
                                 updateProgress(100, "✅ Download started! Check your browser downloads.");
-                                
+
+                                // Clear progress state after successful completion
+                                setTimeout(() => {
+                                    ProgressPersistence.clearProgressState(projectName);
+                                    currentTaskId = null;
+                                }, 3000);
+
                                 // Hide stop button since automation is done
                                 const stopBtn = document.querySelector('.btn-danger');
                                 if (stopBtn && stopBtn.textContent.includes('Stop')) {
                                     stopBtn.style.display = 'none';
                                 }
                             }, 1000);
-                            
+
                         } else if (status.status === 'failed') {
                             clearInterval(progressInterval);
-                            
+
                             // STOP THE SMOOTH ANIMATION ON FAILURE
                             if (animationTimer) {
                                 clearInterval(animationTimer);
                                 animationTimer = null;
                             }
-                            
-                            currentTaskId = null;
-                            currentProgressDisplay = 0.0;
-                            targetProgressValue = 0.0;
-                            
+
                             const progressFill = document.getElementById('progressFill');
                             progressFill.style.width = '0%';
                             progressFill.textContent = '0.0%';
                             progressFill.classList.remove('pulsing');
-                            
+
                             updateProgress(0, "❌ Automation failed: " + status.message);
-                            
+
+                            // Save failed state and clear after a delay
+                            const projectName = 'call_automation';
+                            const logContent = document.getElementById('logContent');
+                            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+
+                            ProgressPersistence.saveProgressState(projectName, {
+                                taskId: currentTaskId,
+                                progress: 0,
+                                targetProgress: 0,
+                                currentDisplay: 0,
+                                status: 'failed',
+                                logs: currentLogs,
+                                lastMessage: "❌ Automation failed: " + status.message,
+                                isVisible: true
+                            });
+
+                            // Clear progress state after showing error
+                            setTimeout(() => {
+                                ProgressPersistence.clearProgressState(projectName);
+                                currentTaskId = null;
+                                currentProgressDisplay = 0.0;
+                                targetProgressValue = 0.0;
+                            }, 5000);
+
                             // Hide stop button since automation is done
                             const stopBtn = document.querySelector('.btn-danger');
                             if (stopBtn && stopBtn.textContent.includes('Stop')) {
@@ -1310,26 +1485,41 @@
         function updateProgress(progress, message) {
             // Set the target for smooth animation instead of direct update
             targetProgressValue = parseFloat(progress);
-            
+
             const logContent = document.getElementById('logContent');
-            
+
             // Only add to log if message is different from last one
             if (message !== lastLogMessage) {
                 const timestamp = new Date().toLocaleTimeString();
-                
+
                 // Create a new div for each log entry to ensure proper line breaks
                 const logEntry = document.createElement('div');
                 logEntry.textContent = `[${timestamp}] ${message}`;
                 logContent.appendChild(logEntry);
-                
+
                 // Keep only last 50 log entries to prevent memory issues
                 while (logContent.children.length > 50) {
                     logContent.removeChild(logContent.firstChild);
                 }
-                
+
                 logContent.scrollTop = logContent.scrollHeight;
                 lastLogMessage = message;
             }
+
+            // Save progress state to localStorage
+            const projectName = 'call_automation';
+            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: progress,
+                targetProgress: targetProgressValue,
+                currentDisplay: currentProgressDisplay,
+                status: 'running',
+                logs: currentLogs,
+                lastMessage: lastLogMessage,
+                isVisible: true
+            });
         }
 
         async function stopAutomation() {
@@ -1339,7 +1529,7 @@
                     const response = await fetch(`/api/automation/${currentTaskId}/stop`, {
                         method: 'POST'
                     });
-                    
+
                     if (response.ok) {
                         const result = await response.json();
                         console.log('Automation stopped:', result.message);
@@ -1349,28 +1539,34 @@
                 } catch (error) {
                     console.error('Error stopping automation:', error);
                 }
-                
+
                 // Clean up frontend regardless of backend response
-                currentTaskId = null;
                 clearInterval(progressInterval);
-                
+
                 // STOP THE SMOOTH ANIMATION
                 if (animationTimer) {
                     clearInterval(animationTimer);
                     animationTimer = null;
                 }
-                
+
                 // Reset progress display
                 currentProgressDisplay = 0.0;
                 targetProgressValue = 0.0;
-                
+
                 const progressFill = document.getElementById('progressFill');
                 progressFill.style.width = '0%';
                 progressFill.textContent = '0.0%';
                 progressFill.classList.remove('pulsing');
-                
+
                 updateProgress(0, "🛑 Automation stopped by user");
-                
+
+                // Clear progress state when stopped by user
+                const projectName = 'call_automation';
+                setTimeout(() => {
+                    ProgressPersistence.clearProgressState(projectName);
+                    currentTaskId = null;
+                }, 2000);
+
                 // Hide the stop button
                 const stopBtn = document.querySelector('.btn-danger');
                 if (stopBtn && stopBtn.textContent.includes('Stop')) {

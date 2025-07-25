@@ -715,6 +715,75 @@
         let animationTimer = null;
         let automationStartTime = null;
 
+        // PROGRESS PERSISTENCE MODULE
+        const ProgressPersistence = {
+            // Storage keys for different projects
+            getStorageKey: function(projectName) {
+                return `livevox_progress_${projectName}`;
+            },
+
+            // Save progress state to localStorage
+            saveProgressState: function(projectName, state) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const progressData = {
+                        taskId: state.taskId,
+                        progress: state.progress || 0,
+                        targetProgress: state.targetProgress || 0,
+                        currentDisplay: state.currentDisplay || 0,
+                        status: state.status || 'running',
+                        startTime: state.startTime || new Date().toISOString(),
+                        logs: state.logs || [],
+                        lastMessage: state.lastMessage || '',
+                        isVisible: state.isVisible || false,
+                        timestamp: new Date().toISOString()
+                    };
+                    localStorage.setItem(storageKey, JSON.stringify(progressData));
+                    console.log(`Progress state saved for ${projectName}:`, progressData);
+                } catch (error) {
+                    console.error('Error saving progress state:', error);
+                }
+            },
+
+            // Load progress state from localStorage
+            loadProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    const stored = localStorage.getItem(storageKey);
+                    if (stored) {
+                        const progressData = JSON.parse(stored);
+                        console.log(`Progress state loaded for ${projectName}:`, progressData);
+                        return progressData;
+                    }
+                } catch (error) {
+                    console.error('Error loading progress state:', error);
+                }
+                return null;
+            },
+
+            // Clear progress state (when task completes/fails)
+            clearProgressState: function(projectName) {
+                try {
+                    const storageKey = this.getStorageKey(projectName);
+                    localStorage.removeItem(storageKey);
+                    console.log(`Progress state cleared for ${projectName}`);
+                } catch (error) {
+                    console.error('Error clearing progress state:', error);
+                }
+            },
+
+            // Check if task is still active
+            isTaskActive: function(progressData) {
+                if (!progressData || !progressData.taskId) return false;
+                
+                // Consider task active if status is running and not too old
+                const age = new Date() - new Date(progressData.timestamp);
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+                
+                return progressData.status === 'running' && age < maxAge;
+            }
+        };
+
         function startSmoothAnimation() {
             if (animationTimer) {
                 clearInterval(animationTimer);
@@ -765,6 +834,56 @@
         let currentTableRows = [];
         let convertedAudioFiles = [];
 
+        // Resume progress from persisted state
+        function resumeProgressFromState() {
+            const projectName = 'add_phrases';
+            const savedState = ProgressPersistence.loadProgressState(projectName);
+            
+            if (savedState && ProgressPersistence.isTaskActive(savedState)) {
+                console.log('Resuming progress from saved state:', savedState);
+                
+                // Restore global variables
+                currentTaskId = savedState.taskId;
+                currentProgressDisplay = savedState.currentDisplay || 0;
+                targetProgressValue = savedState.targetProgress || 0;
+                automationStartTime = savedState.startTime ? new Date(savedState.startTime) : new Date();
+                
+                // Show progress container
+                const progressContainer = document.getElementById('progressContainer');
+                progressContainer.style.display = 'block';
+                
+                // Restore progress bar state
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = `${currentProgressDisplay}%`;
+                progressFill.textContent = `${currentProgressDisplay.toFixed(1)}%`;
+                
+                if (savedState.status === 'running') {
+                    progressFill.classList.add('pulsing');
+                }
+                
+                // Restore log content
+                const logContent = document.getElementById('logContent');
+                logContent.innerHTML = '';
+                
+                if (savedState.logs && savedState.logs.length > 0) {
+                    savedState.logs.forEach(logMessage => {
+                        const logEntry = document.createElement('div');
+                        logEntry.textContent = logMessage;
+                        logContent.appendChild(logEntry);
+                    });
+                    logContent.scrollTop = logContent.scrollHeight;
+                }
+                
+                // Resume polling and animation if task is still running
+                if (savedState.status === 'running' && currentTaskId) {
+                    startSmoothAnimation();
+                    startProgressPolling();
+                    
+                    console.log('Progress polling and animation resumed');
+                }
+            }
+        }
+
         // Load credentials from localStorage
         document.addEventListener('DOMContentLoaded', function() {
             loadCredentials();
@@ -772,6 +891,9 @@
             loadConvertedFiles();
             initializePhraseTable();
             // Simple audio player is ready - no initialization needed
+            
+            // Check for and resume any active progress
+            resumeProgressFromState();
         });
 
         function loadCredentials() {
@@ -1026,8 +1148,23 @@
             logContent.innerHTML = '';
 
             const initialLog = document.createElement('div');
-            initialLog.textContent = 'Starting automation...';
+            const initialMessage = 'Starting automation...';
+            initialLog.textContent = initialMessage;
             logContent.appendChild(initialLog);
+
+            // Save initial progress state
+            const projectName = 'add_phrases';
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: 0,
+                targetProgress: 0,
+                currentDisplay: 0,
+                status: 'running',
+                startTime: automationStartTime.toISOString(),
+                logs: [initialMessage],
+                lastMessage: initialMessage,
+                isVisible: true
+            });
 
             // Start smooth animation
             startSmoothAnimation();
@@ -1061,17 +1198,58 @@
                         targetProgressValue = 100.0;
                         updateProgress(100, "Automation completed successfully!");
 
-                        // Allow animation to complete naturally
+                        // Save completed state
+                        const projectName = 'add_phrases';
+                        const logContent = document.getElementById('logContent');
+                        const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+                        
+                        ProgressPersistence.saveProgressState(projectName, {
+                            taskId: currentTaskId,
+                            progress: 100,
+                            targetProgress: 100,
+                            currentDisplay: 100,
+                            status: 'completed',
+                            startTime: automationStartTime ? automationStartTime.toISOString() : new Date().toISOString(),
+                            logs: currentLogs,
+                            lastMessage: 'Automation completed successfully!',
+                            isVisible: true
+                        });
+
+                        // Clear progress state after successful completion
                         setTimeout(() => {
+                            ProgressPersistence.clearProgressState(projectName);
                             currentTaskId = null;
-                        }, 1000);
+                        }, 5000);
 
                     } else if (status.status === 'error') {
                         clearInterval(progressInterval);
-                        currentTaskId = null;
                         const timestamp = new Date().toLocaleTimeString();
                         const runningTime = getRunningTime();
-                        addLogMessage(`[${timestamp}] Error: ${status.message} (Running ${runningTime})`);
+                        const errorMessage = `Error: ${status.message}`;
+                        addLogMessage(`[${timestamp}] ${errorMessage} (Running ${runningTime})`);
+
+                        // Save failed state and clear after a delay
+                        const projectName = 'add_phrases';
+                        const logContent = document.getElementById('logContent');
+                        const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+                        
+                        ProgressPersistence.saveProgressState(projectName, {
+                            taskId: currentTaskId,
+                            progress: 0,
+                            targetProgress: 0,
+                            currentDisplay: 0,
+                            status: 'failed',
+                            startTime: automationStartTime ? automationStartTime.toISOString() : new Date().toISOString(),
+                            logs: currentLogs,
+                            lastMessage: errorMessage,
+                            isVisible: true
+                        });
+
+                        // Clear progress state after showing error
+                        setTimeout(() => {
+                            ProgressPersistence.clearProgressState(projectName);
+                            currentTaskId = null;
+                        }, 5000);
                     }
                 } catch (error) {
                     console.error('Error polling status:', error);
@@ -1095,6 +1273,23 @@
                 const runningTime = getRunningTime();
                 addLogMessage(`[${timestamp}] ${message} (Running ${runningTime})`);
             }
+
+            // Save progress state to localStorage
+            const projectName = 'add_phrases';
+            const logContent = document.getElementById('logContent');
+            const currentLogs = Array.from(logContent.children).map(div => div.textContent);
+            
+            ProgressPersistence.saveProgressState(projectName, {
+                taskId: currentTaskId,
+                progress: progress,
+                targetProgress: targetProgressValue,
+                currentDisplay: currentProgressDisplay,
+                status: 'running',
+                startTime: automationStartTime ? automationStartTime.toISOString() : new Date().toISOString(),
+                logs: currentLogs,
+                lastMessage: message || '',
+                isVisible: true
+            });
         }
 
         function updateLogMessages(messages) {
@@ -1276,9 +1471,15 @@
             progressFill.textContent = '0.0%';
             progressFill.classList.remove('pulsing');
 
-            currentTaskId = null;
             const timestamp = new Date().toLocaleTimeString();
             addLogMessage(`[${timestamp}] 🛑 Automation stopped by user`);
+
+            // Clear progress state when stopped by user
+            const projectName = 'add_phrases';
+            setTimeout(() => {
+                ProgressPersistence.clearProgressState(projectName);
+                currentTaskId = null;
+            }, 2000);
         }
 
         // Missing functions for audio upload and phrase management
