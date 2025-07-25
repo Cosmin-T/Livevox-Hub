@@ -506,6 +506,7 @@
                                 <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;" onchange="uploadExcel()">
                             </div>
                             <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top: 15px;">Download Excel Template</button>
+                            <button class="btn btn-primary" onclick="downloadAllData()" style="margin-top: 15px;">Download All Existing Data</button>
                         </div>
                     </div>
                 </div>
@@ -1249,6 +1250,10 @@
 
         function downloadTemplate() {
             window.location.href = '/api/download-template';
+        }
+
+        function downloadAllData() {
+            window.location.href = '/api/download-all-data';
         }
 
         async function startAutomation(type) {

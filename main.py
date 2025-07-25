@@ -1272,6 +1272,66 @@ async def download_template():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+@app.get("/api/download-all-data")
+async def download_all_existing_data():
+    """Download all existing agent data with phone numbers and durations"""
+    try:
+        # Get all existing calls data
+        all_phone_numbers = []
+        all_durations = []
+        all_agent_ids = []
+        all_folder_names = []
+        all_locators = []
+        
+        # Agent details mapping
+        agent_details_map = {
+            "3P_95": {"folder": "Chuck", "locator_id": "963665"},
+            "3P_235": {"folder": "Jim", "locator_id": "976426"},
+            "3P_1483": {"folder": "Clifford", "locator_id": "969789"},
+            "3P_260": {"folder": "Kathy", "locator_id": "963666"},
+            "3P_282": {"folder": "Laurie", "locator_id": "924766"}
+        }
+        
+        # Get calls for each agent
+        for agent_id in agent_details_map.keys():
+            calls = data_manager.get_calls(agent_id)
+            if calls:
+                for call in calls:
+                    all_phone_numbers.append(call['phone'])
+                    all_durations.append(int(call['duration']))
+                    all_agent_ids.append(agent_id)
+                    all_folder_names.append(agent_details_map[agent_id]['folder'])
+                    all_locators.append(agent_details_map[agent_id]['locator_id'])
+        
+        if not all_phone_numbers:
+            # Return empty template if no data exists
+            template_data = {
+                'phone number': [],
+                'duration': [],
+                'agent ID': [],
+                'folder name (name)': [],
+                'locator': []
+            }
+        else:
+            template_data = {
+                'phone number': all_phone_numbers,
+                'duration': all_durations,
+                'agent ID': all_agent_ids,
+                'folder name (name)': all_folder_names,
+                'locator': all_locators
+            }
+        
+        df = pd.DataFrame(template_data)
+        filename = "all_existing_agent_data.xlsx"
+        df.to_excel(filename, index=False)
+        return FileResponse(
+            filename,
+            filename=filename,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error downloading existing data: {str(e)}")
+
 @app.delete("/api/agents")
 async def delete_all_agents():
     data_manager.remove_all_agents()
