@@ -24,11 +24,16 @@
         }
 
         .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 280px;
+            height: 100vh;
             background-color: #000000;
             color: #ffffff;
             padding: 20px;
             border-right: 1px solid #cccccc;
+            overflow-y: auto;
         }
 
         .sidebar h1 {
@@ -56,6 +61,7 @@
 
         .main-content {
             flex: 1;
+            margin-left: 280px;
             padding: 30px;
             overflow-y: auto;
         }
@@ -332,8 +338,14 @@
             }
 
             .sidebar {
+                position: static;
                 width: 100%;
+                height: auto;
                 padding: 15px;
+            }
+
+            .main-content {
+                margin-left: 0;
             }
 
             .two-column {
@@ -350,14 +362,41 @@
     <div class="container">
         <aside class="sidebar">
             <h1>HCI Summary Report</h1>
-            <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146zM12 14H9.5a.5.5 0 0 0-.5.5v.5H12v-.5a.5.5 0 0 0-.5-.5z"/>
-                    <path d="M15.5 8.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5z"/>
-                    <path fill-rule="evenodd" d="M11.854 3.146a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L11.5 4.207V6.5a.5.5 0 0 0 1 0V3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h2.293z"/>
-                </svg>
-                Back to Hub
-            </a>
+            <ul class="nav-list" style="list-style: none;">
+                <li class="nav-item" style="margin-bottom: 10px;">
+                    <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #ffffff; text-decoration: none; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s ease;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+                        </svg>
+                        Hub
+                    </a>
+                </li>
+                <li class="nav-item" style="margin-bottom: 10px;">
+                    <a href="/livevox" class="nav-link" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #ffffff; text-decoration: none; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s ease;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        </svg>
+                        Call Automation
+                    </a>
+                </li>
+                <li class="nav-item" style="margin-bottom: 10px;">
+                    <a href="/hci-summary" class="nav-link" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #ffffff; text-decoration: none; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s ease; background-color: rgba(255, 255, 255, 0.1);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                        </svg>
+                        HCI Summary
+                    </a>
+                </li>
+                <li class="nav-item" style="margin-bottom: 10px;">
+                    <a href="/add-phrases" class="nav-link" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #ffffff; text-decoration: none; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s ease;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Add Phrases
+                    </a>
+                </li>
+            </ul>
         </aside>
 
         <main class="main-content">
@@ -609,7 +648,7 @@
                     `;
                     
                     agentDiv.onclick = function(e) {
-                        if (e.target.type !== 'checkbox' && !e.target.classList.contains('delete-btn')) {
+                        if (e.target.type !== 'checkbox' && !e.target.classList.contains('delete-btn') && e.target.tagName !== 'LABEL') {
                             const checkbox = agentDiv.querySelector('input[type="checkbox"]');
                             checkbox.checked = !checkbox.checked;
                             toggleAgent(agent, agentDiv);
@@ -925,7 +964,6 @@
                         if (status.status === 'completed') {
                             clearInterval(progressInterval);
                             targetProgressValue = 100.0;
-                            updateProgress(100, "HCI automation completed! Preparing ZIP download...");
                             
                             // Save completed state
                             const projectName = 'hci_summary';
@@ -939,33 +977,42 @@
                                 currentDisplay: 100,
                                 status: 'completed',
                                 logs: currentLogs,
-                                lastMessage: 'HCI automation completed! Preparing ZIP download...',
+                                lastMessage: currentLogs[currentLogs.length - 1] || 'HCI automation completed',
                                 isVisible: true
                             });
                             
-                            // Trigger ZIP download
-                            setTimeout(() => {
-                                window.location.href = `/api/automation/${currentTaskId}/download`;
-                                
-                                updateProgress(100, "✅ Download started! Check your browser downloads.");
-                                
-                                // Hide stop button since automation is done
-                                const stopBtn = document.querySelector('.btn-danger');
-                                if (stopBtn && stopBtn.textContent.includes('Stop')) {
-                                    stopBtn.style.display = 'none';
-                                }
-                                
-                                // Clear progress state after successful completion
+                            // Only trigger download if there's a file available
+                            if (status.has_download) {
+                                setTimeout(() => {
+                                    window.location.href = `/api/automation/${currentTaskId}/download`;
+                                    
+                                    updateProgress(100, "✅ Download started! Check your browser downloads.");
+                                    
+                                    // Clear progress state after successful completion
+                                    setTimeout(() => {
+                                        ProgressPersistence.clearProgressState(projectName);
+                                        currentTaskId = null;
+                                    }, 3000);
+                                    
+                                }, 1000);
+                            } else {
+                                // No download available, just clean up
                                 setTimeout(() => {
                                     ProgressPersistence.clearProgressState(projectName);
                                     currentTaskId = null;
                                 }, 3000);
-                                
-                            }, 1000);
+                            }
+                            
+                            // Hide stop button since automation is done
+                            const stopBtn = document.querySelector('.btn-danger');
+                            if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                stopBtn.style.display = 'none';
+                            }
                             
                         } else if (status.status === 'failed') {
                             clearInterval(progressInterval);
-                            updateProgress(0, "❌ HCI automation failed: " + status.message);
+                            const errorMessage = status.message.startsWith('❌') ? status.message : "❌ " + status.message;
+                            updateProgress(0, errorMessage);
                             
                             // Save failed state and clear after a delay
                             const projectName = 'hci_summary';
@@ -979,7 +1026,7 @@
                                 currentDisplay: 0,
                                 status: 'failed',
                                 logs: currentLogs,
-                                lastMessage: "❌ HCI automation failed: " + status.message,
+                                lastMessage: errorMessage,
                                 isVisible: true
                             });
                             

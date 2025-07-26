@@ -1,0 +1,166 @@
+{
+  "sessions": {
+    "2fa97ef2-1654-4333-ada6-86ce39412409": {
+      "username": "cturculeanu",
+      "ip_address": "192.168.1.1",
+      "created_at": "2025-07-25T15:25:53.735561",
+      "expires_at": "2025-07-26T15:25:53.735569"
+    },
+    "05e91f3a-4a8c-4adc-96b2-5ba76d06b98f": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T15:26:50.351383",
+      "expires_at": "2025-07-26T15:26:50.351390"
+    },
+    "e853d731-bc68-4773-82a2-3c4b3189fc4f": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T15:32:27.063888",
+      "expires_at": "2025-07-26T15:32:27.063893"
+    },
+    "6cb2fd99-5f0a-44ed-9ddf-c871ee880ba3": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:02:17.162351",
+      "expires_at": "2025-07-26T16:02:17.162412"
+    },
+    "c8014b3e-066b-48d6-a7d3-7898273c1f74": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:04:12.189551",
+      "expires_at": "2025-07-26T16:04:12.189559"
+    },
+    "6c267edc-ea2a-4fec-8af1-77b77438e867": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:05:51.749205",
+      "expires_at": "2025-07-26T16:05:51.749208"
+    },
+    "8a4ad073-746b-46de-98eb-d7d1d4cea0f7": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:08:59.879821",
+      "expires_at": "2025-07-26T16:08:59.879825"
+    },
+    "58dde84a-6530-4687-9f05-30a8f4f823be": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:10:19.743791",
+      "expires_at": "2025-07-26T16:10:19.743796"
+    },
+    "e6df8a82-c9aa-4893-94d4-1070628a50f4": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:10:29.532018",
+      "expires_at": "2025-07-26T16:10:29.532021"
+    },
+    "ac2c1236-e796-4dc6-95b3-0ec2378b3dc0": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:11:42.064203",
+      "expires_at": "2025-07-26T16:11:42.064207"
+    },
+    "1e696e59-ae05-4284-bddf-9ab258118f77": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:12:53.754088",
+      "expires_at": "2025-07-26T16:12:53.754092"
+    },
+    "7210a64b-c7a8-4131-981f-225131b4b2e2": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:12:55.880336",
+      "expires_at": "2025-07-26T16:12:55.880340"
+    },
+    "eba7cfc0-6ee5-41a0-9f33-8b956489ee62": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:14:35.725692",
+      "expires_at": "2025-07-26T16:14:35.725696"
+    },
+    "13b81b1c-5dc6-4799-9fff-1a7cd567e8eb": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:14:41.650131",
+      "expires_at": "2025-07-26T16:14:41.650135"
+    },
+    "9b4a61ee-3b50-44d4-bb68-dfe33d783f14": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:15:19.166027",
+      "expires_at": "2025-07-26T16:15:19.166030"
+    },
+    "afdb7e98-ed7d-4ad2-9185-3e955cf6540b": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:15:32.917155",
+      "expires_at": "2025-07-26T16:15:32.917172"
+    },
+    "c7976afc-104f-4610-8c3b-c24a9c27ec46": {
+      "username": "test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:16:08.429047",
+      "expires_at": "2025-07-26T16:16:08.429050"
+    },
+    "317ba364-a756-4482-ba7f-890b5236f4b3": {
+      "username": "test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:16:10.000961",
+      "expires_at": "2025-07-26T16:16:10.000966"
+    },
+    "562d1af1-3055-41cb-8db0-90cd115c889a": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:18:30.008814",
+      "expires_at": "2025-07-26T16:18:30.008818"
+    },
+    "58f53bc4-1b6b-41de-9787-0c531de39f2d": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:19:15.853913",
+      "expires_at": "2025-07-26T16:19:15.853917"
+    },
+    "d405856b-d049-4e41-b0b6-6b28b46c7006": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:19:59.372425",
+      "expires_at": "2025-07-26T16:19:59.372428"
+    },
+    "c6775c80-7e25-432b-9bb0-e83126157ca1": {
+      "username": "Test",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:20:11.023512",
+      "expires_at": "2025-07-26T16:20:11.023516"
+    },
+    "68637f01-ec24-4ff3-b72b-f1686051b79b": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:20:45.119078",
+      "expires_at": "2025-07-26T16:20:45.119085"
+    },
+    "ada444ba-d671-4087-ab00-b13140b63373": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:22:40.689373",
+      "expires_at": "2025-07-26T16:22:40.689377"
+    },
+    "9d320647-0fbe-46f8-9361-a4c493d244d9": {
+      "username": "cturculeanu",
+      "ip_address": "127.0.0.1",
+      "created_at": "2025-07-25T16:25:40.952594",
+      "expires_at": "2025-07-26T16:25:40.952599"
+    },
+    "7cccbe85-013f-4037-be62-f6552f092a96": {
+      "username": "cturculeanu",
+      "ip_address": "192.168.1.176",
+      "created_at": "2025-07-25T16:31:57.446451",
+      "expires_at": "2025-07-26T16:31:57.446455"
+    },
+    "12eb51bf-9743-434f-a530-f97b2fa7c3a3": {
+      "username": "cturculeanu",
+      "ip_address": "192.168.1.199",
+      "created_at": "2025-07-25T19:23:24.583694",
+      "expires_at": "2025-07-26T19:23:24.583709"
+    }
+  }
+}

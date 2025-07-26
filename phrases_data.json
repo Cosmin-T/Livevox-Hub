@@ -28,9 +28,40 @@
       "phrase_name": "Test4",
       "verbiage": "This is a test.....",
       "description": "This is a test.....",
-      "wav_org_file": null,
+      "wav_org_file": {
+        "filename": "DellFilipino-MainMenupress3_G711.org_.wav",
+        "original_name": "DellFilipino-MainMenupress3_G711.org_.wav",
+        "size": 282396,
+        "base64_content": ""
+      },
       "id": "093595ec-1c39-4a04-b0e2-b24936c32743",
       "created_at": "2025-07-24T00:35:42.442013"
+    },
+    {
+      "phrase_name": "Test5",
+      "verbiage": "This is a test......",
+      "description": "This is a test......",
+      "wav_org_file": {
+        "filename": "org_Dell Filipino- Closed.wav",
+        "original_name": "Dell Filipino- Closed.mp3",
+        "size": 568758,
+        "base64_content": ""
+      },
+      "id": "155d1204-b58a-4add-9933-50f9050f83e6",
+      "created_at": "2025-07-26T09:59:01.747350"
+    },
+    {
+      "phrase_name": "Test6",
+      "verbiage": "This is a test.......",
+      "description": "This is a test.......",
+      "wav_org_file": {
+        "filename": "Voicemail_2-635957-G711.org_.wav",
+        "original_name": "Voicemail_2-635957-G711.org_.wav",
+        "size": 355404,
+        "base64_content": ""
+      },
+      "id": "2caf9cd5-096d-49a8-b457-5f02ed39ce71",
+      "created_at": "2025-07-26T09:59:15.605409"
     }
   ]
 }

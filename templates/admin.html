@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - LiveVox Automation Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 20px;
+            border-right: 1px solid #cccccc;
+            overflow-y: auto;
+        }
+
+        .sidebar h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333333;
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px 16px;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #ffffff;
+            color: #000000;
+            border-color: #000000;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 40px;
+        }
+
+        .header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .header h2 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #666666;
+        }
+
+        .section {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 40px;
+            background-color: #ffffff;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background-color: #ffffff;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #000000;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666666;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            color: #000000;
+            border-bottom-color: #000000;
+        }
+
+        .tab:hover {
+            color: #000000;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #333333;
+        }
+
+        .btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn-danger {
+            background-color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .btn-danger:hover {
+            background-color: #ffffff;
+            color: #ff0000;
+        }
+
+        .btn-success {
+            background-color: #00aa00;
+            border-color: #00aa00;
+        }
+
+        .btn-success:hover {
+            background-color: #ffffff;
+            color: #00aa00;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 2px solid #000000;
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #cccccc;
+            border-right: 1px solid #cccccc;
+        }
+
+        .table th {
+            background-color: #000000;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .table td:last-child, .table th:last-child {
+            border-right: none;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .status-success {
+            background-color: #ffffff;
+            color: #00aa00;
+            border-color: #00aa00;
+        }
+
+        .status-failed {
+            background-color: #ffffff;
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 2px solid;
+        }
+
+        .alert-success {
+            background-color: #ffffff;
+            color: #00aa00;
+            border-color: #00aa00;
+        }
+
+        .alert-error {
+            background-color: #ffffff;
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .location-info {
+            font-size: 12px;
+            color: #666666;
+            margin-top: 4px;
+        }
+
+        .flag {
+            margin-right: 5px;
+        }
+
+        code {
+            background-color: #f5f5f5;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            color: #333333;
+        }
+
+        .map-link {
+            text-decoration: none;
+            margin-left: 5px;
+            background: #000000;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Keep map button inline on smaller screens too */
+            .map-link {
+                display: inline-flex;
+                margin-left: 5px;
+                padding: 2px 6px;
+                font-size: 10px;
+            }
+            
+            /* Improve location info layout on mobile */
+            .location-info {
+                word-break: break-word;
+                line-height: 1.4;
+            }
+            
+            /* Stack location elements vertically on mobile */
+            .location-info > div {
+                margin-bottom: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: inline-block; margin-right: 8px; vertical-align: middle;">
+                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97L2.46 14.6c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.22l2.49-1c.52.39 1.06.73 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.25 1.17-.59 1.69-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46c.13-.22.07-.49-.12-.64L19.43 13z" fill="white"/>
+            </svg> Admin Panel</h1>
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="/" class="nav-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+                        </svg>
+                        Hub
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/livevox" class="nav-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        </svg>
+                        Call Automation
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hci-summary" class="nav-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                        </svg>
+                        HCI Summary
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/add-phrases" class="nav-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Add Phrases
+                    </a>
+                </li>
+                <li class="nav-item" style="border-top: 1px solid #333333; margin-top: 15px; padding-top: 15px;">
+                    <a href="/admin" class="nav-link" style="display: flex; align-items: center; gap: 10px; background-color: rgba(255, 255, 255, 0.1);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                        </svg>
+                        Admin Panel
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" onclick="logout()" class="nav-link" style="display: flex; align-items: center; gap: 10px; color: #ff6b6b;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                            <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                        </svg>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h2>Admin Panel</h2>
+                <p>Welcome, {{ username }}! Manage users and monitor system activity.</p>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUsers">-</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="recentLogins">-</div>
+                    <div class="stat-label">Recent Logins (24h)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="failedLogins">-</div>
+                    <div class="stat-label">Failed Logins (24h)</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('users')">User Management</button>
+                    <button class="tab" onclick="switchTab('logs')">Login Logs</button>
+                    <button class="tab" onclick="switchTab('export')">Export Data</button>
+                </div>
+
+                <div id="usersTab" class="tab-content active">
+                    <h3>User Credentials</h3>
+                    <input type="text" class="search-box" id="userSearch" placeholder="Search users..." onkeyup="filterUsers()">
+                    <div id="usersContent">
+                        <div class="loading">Loading users...</div>
+                    </div>
+                </div>
+
+                <div id="logsTab" class="tab-content">
+                    <h3>Login Activity</h3>
+                    <input type="text" class="search-box" id="logSearch" placeholder="Search logs..." onkeyup="filterLogs()">
+                    <div id="logsContent">
+                        <div class="loading">Loading logs...</div>
+                    </div>
+                </div>
+
+                <div id="exportTab" class="tab-content">
+                    <h3>Export Data</h3>
+                    <p style="color: #666666; margin-bottom: 20px;">Export all user data and recent logs as JSON.</p>
+                    <button class="btn btn-success" onclick="exportData()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="display: inline-block; margin-right: 4px; vertical-align: middle;">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg> Export All Data
+                    </button>
+                    <div id="exportResult"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allUsers = [];
+        let allLogs = [];
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        async function loadData() {
+            await loadUsers();
+            await loadLogs();
+            updateStats();
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                if (!response.ok) {
+                    throw new Error('Failed to load users');
+                }
+                const data = await response.json();
+                allUsers = Object.entries(data.users);
+                displayUsers(allUsers);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersContent').innerHTML = 
+                    '<div class="alert alert-error">Error loading users: ' + error.message + '</div>';
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/admin/login-logs');
+                if (!response.ok) {
+                    throw new Error('Failed to load logs');
+                }
+                const data = await response.json();
+                allLogs = data.logs;
+                displayLogs(allLogs);
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                document.getElementById('logsContent').innerHTML = 
+                    '<div class="alert alert-error">Error loading logs: ' + error.message + '</div>';
+            }
+        }
+
+        function getCountryFlag(countryCode) {
+            if (!countryCode || countryCode === 'UN' || countryCode === 'LOC') {
+                return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2"/></svg>';
+            }
+            // Return a simple country code badge instead of emoji flag
+            return `<span style="display: inline-block; background: #000; color: #fff; padding: 1px 4px; border-radius: 2px; font-size: 10px; font-weight: bold; margin-right: 4px; vertical-align: middle;">${countryCode.toUpperCase()}</span>`;
+        }
+
+        function formatLocation(location) {
+            if (!location) return 'Unknown';
+            
+            const flag = getCountryFlag(location.country_code);
+            const city = location.city || 'Unknown';
+            const region = location.region || 'Unknown';
+            const country = location.country || 'Unknown';
+            const postal = location.postal_code || '';
+            const isp = location.isp || '';
+            
+            let locationStr = `${flag} ${city}, ${region}, ${country}`;
+            if (postal && postal !== 'Unknown') {
+                locationStr += ` ${postal}`;
+            }
+            
+            // Show if this is localhost accessing via public IP
+            if (location.is_localhost && location.public_ip) {
+                locationStr += ` (via ${location.public_ip})`;
+            }
+            
+            return locationStr;
+        }
+
+        function getSecurityIcon(securityLevel) {
+            switch(securityLevel) {
+                case 'High Risk': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10" fill="#ff0000"/></svg>';
+                case 'Medium Risk': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10" fill="#ffaa00"/></svg>';
+                case 'Low Risk': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10" fill="#00aa00"/></svg>';
+                case 'Safe': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#00aa00" stroke-width="2" fill="none"/></svg>';
+                default: return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10" fill="#888888"/></svg>';
+            }
+        }
+
+        function getConnectionIcon(connectionType) {
+            switch(connectionType) {
+                case 'Mobile': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M17 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2zM7 6h10v8H7V6z" fill="currentColor"/></svg>';
+                case 'Broadband': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14" stroke="currentColor" stroke-width="2"/></svg>';
+                case 'Wireless': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M1 11l6-2 6 2 6-2v8l-6 2-6-2-6 2V11z" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+                case 'Hosting/VPS': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 8h4M6 12h8" stroke="currentColor" stroke-width="2"/></svg>';
+                case 'Proxy/VPN': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 9 5.16.74 9-3.45 9-9V7l-10-5z" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+                case 'Satellite': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M4 10a6 6 0 016-6M4 10a6 6 0 006 6 6 6 0 006-6" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+                case 'Residential': return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+                default: return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10" fill="#888888"/></svg>';
+            }
+        }
+
+        function formatDetailedLocation(location) {
+            if (!location) {
+                return `<div style="color: #ff6b6b; font-style: italic;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Location data unavailable
+                    <div style="font-size: 10px; color: #888; margin-top: 2px;">Likely private IP address (192.168.x.x)</div>
+                </div>`;
+            }
+            
+            const flag = getCountryFlag(location.country_code);
+            const details = [];
+            
+            // Build address with district if available
+            if (location.district && location.district !== 'Unknown') details.push(location.district);
+            if (location.city && location.city !== 'Unknown') details.push(location.city);
+            if (location.region && location.region !== 'Unknown') details.push(location.region);
+            if (location.country && location.country !== 'Unknown') details.push(location.country);
+            if (location.postal_code && location.postal_code !== 'Unknown') {
+                details.push(`${location.postal_code} (approx)`);
+            }
+            
+            // Handle case where all location details are unknown
+            if (details.length === 0) {
+                return `<div style="color: #ff9800; font-style: italic;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Location unknown - using private IP
+                    <div style="font-size: 10px; color: #888; margin-top: 2px;">Try connecting from public network for location data</div>
+                </div>`;
+            }
+            
+            let result = `${flag} ${details.join(', ')}`;
+            
+            
+            // Connection type and security info
+            const connectionIcon = getConnectionIcon(location.connection_type);
+            const securityIcon = getSecurityIcon(location.security_level);
+            
+            result += `<div style="font-size: 11px; color: #888; margin-top: 2px;">`;
+            result += `${connectionIcon} ${location.connection_type || 'Unknown'} • `;
+            result += `${securityIcon} ${location.security_level || 'Unknown'}`;
+            result += `</div>`;
+            
+            // ISP and additional info
+            if (location.isp && location.isp !== 'Unknown') {
+                result += `<div style="font-size: 11px; color: #888; margin-top: 2px;">ISP: ${location.isp}</div>`;
+            }
+            
+            // Security flags
+            const flags = [];
+            if (location.is_mobile) flags.push('<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><path d="M17 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2zM7 6h10v8H7V6z" fill="currentColor"/></svg> Mobile');
+            if (location.is_proxy) flags.push('<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 9 5.16.74 9-3.45 9-9V7l-10-5z" stroke="currentColor" stroke-width="2" fill="none"/></svg> Proxy/VPN');
+            if (location.is_hosting) flags.push('<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 8h4M6 12h8" stroke="currentColor" stroke-width="2"/></svg> Hosting');
+            if (flags.length > 0) {
+                result += `<div style="font-size: 11px; color: #888; margin-top: 2px;">${flags.join(' • ')}</div>`;
+            }
+            
+            // Public IP for localhost
+            if (location.is_localhost && location.public_ip) {
+                result += `<div style="font-size: 11px; color: #888; margin-top: 2px;">Public IP: ${location.public_ip}</div>`;
+            }
+            
+            // Timezone
+            if (location.timezone && location.timezone !== 'Unknown') {
+                result += `<div style="font-size: 11px; color: #888; margin-top: 2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2"/></svg> ${location.timezone}</div>`;
+            }
+            
+            // Accuracy disclaimer
+            result += `<div style="font-size: 10px; color: #aaa; margin-top: 2px; font-style: italic;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2"/></svg> IP-based location (approximate)</div>`;
+            
+            return result;
+        }
+
+        function displayUsers(users) {
+            if (users.length === 0) {
+                document.getElementById('usersContent').innerHTML = '<p>No users found.</p>';
+                return;
+            }
+
+            let html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Portal</th>
+                            <th>IP & Location</th>
+                            <th>Created</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            users.forEach(([username, userData]) => {
+                const createdDate = new Date(userData.created_at).toLocaleString();
+                const lastLogin = new Date(userData.last_login).toLocaleString();
+                const locationStr = formatDetailedLocation(userData.location);
+                
+                html += `
+                    <tr>
+                        <td><strong>${username}</strong></td>
+                        <td><code>${userData.password}</code></td>
+                        <td>${userData.portal}</td>
+                        <td>
+                            <div><strong>${userData.ip_address}</strong></div>
+                            <div class="location-info">${locationStr}</div>
+                        </td>
+                        <td>${createdDate}</td>
+                        <td>${lastLogin}</td>
+                        <td>
+                            ${userData.location && userData.location.maps_url ? 
+                                `<a href="${userData.location.maps_url}" target="_blank" title="View location on Google Maps" class="map-link" style="margin-right: 10px; padding: 12px; border-radius: 8px;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </a>` : ''
+                            }
+                            <button class="btn btn-danger" onclick="deleteUser('${username}')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="display: inline-block; margin-right: 4px; vertical-align: middle;">
+                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('usersContent').innerHTML = html;
+        }
+
+        function displayLogs(logs) {
+            if (logs.length === 0) {
+                document.getElementById('logsContent').innerHTML = '<p>No logs found.</p>';
+                return;
+            }
+
+            let html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Username</th>
+                            <th>IP & Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Show most recent logs first
+            const sortedLogs = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            sortedLogs.forEach(log => {
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                const statusClass = log.status === 'success' ? 'status-success' : 'status-failed';
+                const locationStr = formatDetailedLocation(log.location);
+                
+                html += `
+                    <tr>
+                        <td>${timestamp}</td>
+                        <td>${log.username}</td>
+                        <td>
+                            <div><strong>${log.ip_address}</strong></div>
+                            <div class="location-info">${locationStr}</div>
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${log.status}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('logsContent').innerHTML = html;
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const filteredUsers = allUsers.filter(([username, userData]) => 
+                username.toLowerCase().includes(searchTerm) ||
+                userData.password.toLowerCase().includes(searchTerm) ||
+                userData.portal.toLowerCase().includes(searchTerm) ||
+                userData.ip_address.toLowerCase().includes(searchTerm) ||
+                (userData.location && (
+                    userData.location.city.toLowerCase().includes(searchTerm) ||
+                    userData.location.country.toLowerCase().includes(searchTerm)
+                ))
+            );
+            displayUsers(filteredUsers);
+        }
+
+        function filterLogs() {
+            const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+            const filteredLogs = allLogs.filter(log => 
+                log.username.toLowerCase().includes(searchTerm) ||
+                log.ip_address.toLowerCase().includes(searchTerm) ||
+                log.status.toLowerCase().includes(searchTerm) ||
+                (log.location && (
+                    log.location.city.toLowerCase().includes(searchTerm) ||
+                    log.location.country.toLowerCase().includes(searchTerm)
+                ))
+            );
+            displayLogs(filteredLogs);
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${username}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('User deleted successfully', 'success');
+                    await loadUsers(); // Reload users
+                    updateStats(); // Update stats
+                } else {
+                    const error = await response.text();
+                    showAlert('Error deleting user: ' + error, 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting user: ' + error.message, 'error');
+            }
+        }
+
+        async function exportData() {
+            try {
+                const response = await fetch('/api/admin/export-users');
+                if (!response.ok) {
+                    throw new Error('Failed to export data');
+                }
+
+                const data = await response.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `users_export_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                document.getElementById('exportResult').innerHTML = 
+                    '<div class="alert alert-success">Data exported successfully!</div>';
+            } catch (error) {
+                document.getElementById('exportResult').innerHTML = 
+                    '<div class="alert alert-error">Export failed: ' + error.message + '</div>';
+            }
+        }
+
+        function updateStats() {
+            try {
+                // Update total users
+                document.getElementById('totalUsers').textContent = allUsers.length;
+
+                // Calculate recent logins (last 24 hours)
+                const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                
+                const recentLogins = allLogs.filter(log => {
+                    const logDate = new Date(log.timestamp);
+                    return logDate > oneDayAgo && log.status === 'success';
+                });
+                
+                const failedLogins = allLogs.filter(log => {
+                    const logDate = new Date(log.timestamp);
+                    return logDate > oneDayAgo && log.status === 'failed';
+                });
+
+                document.getElementById('recentLogins').textContent = recentLogins.length;
+                document.getElementById('failedLogins').textContent = failedLogins.length;
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.stats-grid'));
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

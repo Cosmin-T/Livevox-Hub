@@ -1,354 +1,3 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Livevox Automation Hub</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-            line-height: 1.6;
-        }
-
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 280px;
-            background-color: #000000;
-            color: #ffffff;
-            padding: 20px;
-            border-right: 1px solid #cccccc;
-        }
-
-        .sidebar h1 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #333333;
-        }
-
-        .project-list {
-            list-style: none;
-        }
-
-        .project-item {
-            margin-bottom: 10px;
-        }
-
-        .project-link {
-            display: block;
-            padding: 12px 16px;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .project-link:hover {
-            background-color: #ffffff;
-            color: #000000;
-            border-color: #000000;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .welcome-section h2 {
-            font-size: 32px;
-            font-weight: 300;
-            margin-bottom: 20px;
-        }
-
-        .welcome-section p {
-            font-size: 16px;
-            color: #666666;
-            max-width: 600px;
-            margin-bottom: 40px;
-        }
-        
-        .section {
-            border: 2px solid #000000;
-            border-radius: 8px;
-            padding: 30px;
-            margin-bottom: 40px;
-            width: 100%;
-            max-width: 600px;
-            background-color: #ffffff;
-            text-align: left;
-        }
-
-        .section h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .section p {
-            font-size: 14px;
-            color: #666666;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #cccccc;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #000000;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            background-color: #000000;
-            color: #ffffff;
-            border: 2px solid #000000;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .btn:hover {
-            background-color: #ffffff;
-            color: #000000;
-        }
-
-        #loginStatus {
-            margin-bottom: 20px;
-            font-weight: 500;
-            padding: 10px;
-            border-radius: 4px;
-            display: none; /* Hidden by default */
-        }
-
-        #loginStatus.success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-        }
-        
-        #loginStatus.info {
-            background-color: #e3f2fd;
-            color: #1565c0;
-        }
-
-        .project-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        .project-card {
-            border: 2px solid #000000;
-            border-radius: 8px;
-            padding: 30px;
-            text-decoration: none;
-            color: #000000;
-            transition: all 0.2s ease;
-            background-color: #ffffff;
-        }
-
-        .project-card:hover {
-            background-color: #000000;
-            color: #ffffff;
-        }
-
-        .project-card h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .project-card p {
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        .footer {
-            margin-top: 40px;
-            font-size: 12px;
-            color: #999999;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-            }
-            .main-content {
-                padding: 20px;
-            }
-            .project-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <aside class="sidebar">
-            <h1>Livevox Automation Hub</h1>
-            <ul class="project-list">
-                <li class="project-item">
-                    <a href="/livevox" class="project-link">LiveVox Call Automation</a>
-                </li>
-                <li class="project-item">
-                    <a href="#" class="project-link" style="opacity: 0.5; cursor: not-allowed;">Project 2 (Coming Soon)</a>
-                </li>
-            </ul>
-        </aside>
-
-        <main class="main-content">
-            <div class="welcome-section">
-                <h2>Welcome to Livevox Automation Hub</h2>
-                <p>Save your credentials below to be used across all projects and select a project from the sidebar to get started.</p>
-            </div>
-
-            <div class="section">
-                <h3>LiveVox Credentials</h3>
-                <p>Enter and save your credentials here. They will be automatically used by all LiveVox automation projects.</p>
-                <div id="loginStatus"></div>
-                <form id="credentialsForm">
-                    <div class="form-group">
-                        <label for="portalSelect">LiveVox Portal:</label>
-                        <select id="portalSelect">
-                            <option value="https://portal.na6.livevox.com/BII_1">BII_1</option>
-                            <option value="https://portal.na3.livevox.com/CADEX_2">CADEX_2</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="username">Username:</label>
-                        <input type="text" id="username" autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Password:</label>
-                        <input type="password" id="password" autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="btn">Save Credentials</button>
-                </form>
-            </div>
-
-            <div class="project-grid">
-                <a href="/livevox" class="project-card">
-                    <h3>LiveVox Call Automation</h3>
-                    <p>Automate call recording downloads with agent management and bulk processing capabilities.</p>
-                </a>
-                <div class="project-card" style="opacity: 0.5; cursor: not-allowed;">
-                    <h3>Project 2</h3>
-                    <p>Coming soon---</p>
-                </div>
-            </div>
-
-            <footer class="footer">
-                <p>Multi-Project Livevox Automation Hub - Built for efficiency</p>
-                <br>
-                <br>
-                <br>
-                <br>
-                <br>
-                <br>
-                <br>
-                <p>@Cosmin T - All rights reserved.</p>
-            </footer>
-        </main>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('credentialsForm');
-            form.addEventListener('submit', saveCredentials);
-            loadCredentials();
-        });
-
-        function saveCredentials(event) {
-            event.preventDefault(); // Prevent form from submitting traditionally
-
-            const portal = document.getElementById('portalSelect').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            if (username && password) {
-                localStorage.setItem('livevox_portal', portal);
-                localStorage.setItem('livevox_username', username);
-                localStorage.setItem('livevox_password', password);
-                
-                const statusDiv = document.getElementById('loginStatus');
-                statusDiv.textContent = 'Credentials saved successfully!';
-                statusDiv.className = 'success';
-                statusDiv.style.display = 'block';
-
-            } else {
-                alert('Please enter both username and password.');
-            }
-        }
-
-        function loadCredentials() {
-            const portal = localStorage.getItem('livevox_portal');
-            const username = localStorage.getItem('livevox_username');
-            const password = localStorage.getItem('livevox_password');
-            const statusDiv = document.getElementById('loginStatus');
-
-            if (portal && username && password) {
-                document.getElementById('portalSelect').value = portal;
-                document.getElementById('username').value = username;
-                document.getElementById('password').value = password;
-
-                statusDiv.textContent = 'Credentials loaded from your last session.';
-                statusDiv.className = 'info';
-                statusDiv.style.display = 'block';
-            }
-        }
-    </script>
-</body>
-</html> -->
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -376,11 +25,16 @@
         }
 
         .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 280px;
+            height: 100vh;
             background-color: #000000;
             color: #ffffff;
             padding: 20px;
             border-right: 1px solid #cccccc;
+            overflow-y: auto;
         }
 
         .sidebar h1 {
@@ -417,6 +71,7 @@
 
         .main-content {
             flex: 1;
+            margin-left: 280px;
             padding: 40px;
             display: flex;
             flex-direction: column;
@@ -525,6 +180,11 @@
         #loginStatus.info {
             background-color: #e3f2fd;
             color: #1565c0;
+        }
+        
+        #loginStatus.error {
+            background-color: #ffebee;
+            color: #c62828;
         }
 
         .project-grid {
@@ -606,9 +266,12 @@
                 flex-direction: column;
             }
             .sidebar {
+                position: static;
                 width: 100%;
+                height: auto;
             }
             .main-content {
+                margin-left: 0;
                 padding: 20px;
             }
             .project-grid {
@@ -623,13 +286,37 @@
             <h1>Livevox Automation Hub</h1>
             <ul class="project-list">
                 <li class="project-item">
-                    <a href="/livevox" class="project-link">LiveVox Call Automation</a>
+                    <a href="/" class="project-link" style="display: flex; align-items: center; gap: 10px; background-color: rgba(255, 255, 255, 0.1);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L8.354 1.146z"/>
+                        </svg>
+                        Hub
+                    </a>
                 </li>
                 <li class="project-item">
-                    <a href="/hci-summary" class="project-link">HCI Summary Report</a>
+                    <a href="/livevox" class="project-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        </svg>
+                        Call Automation
+                    </a>
                 </li>
                 <li class="project-item">
-                    <a href="/add-phrases" class="project-link">Add Phrases</a>
+                    <a href="/hci-summary" class="project-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                        </svg>
+                        HCI Summary
+                    </a>
+                </li>
+                <li class="project-item">
+                    <a href="/add-phrases" class="project-link" style="display: flex; align-items: center; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Add Phrases
+                    </a>
                 </li>
             </ul>
         </aside>
@@ -711,23 +398,71 @@
             loadCredentials();
         });
 
-        function saveCredentials(event) {
+        async function saveCredentials(event) {
             event.preventDefault(); // Prevent form from submitting traditionally
 
             const portal = document.getElementById('portalSelect').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const statusDiv = document.getElementById('loginStatus');
 
             if (username && password) {
-                localStorage.setItem('livevox_portal', portal);
-                localStorage.setItem('livevox_username', username);
-                localStorage.setItem('livevox_password', password);
-                
-                const statusDiv = document.getElementById('loginStatus');
-                statusDiv.textContent = 'Credentials saved successfully!';
-                statusDiv.className = 'success';
-                statusDiv.style.display = 'block';
+                try {
+                    // Get public IP for accurate location
+                    let publicIp = null;
+                    try {
+                        const ipResponse = await fetch('https://api.ipify.org?format=json');
+                        const ipData = await ipResponse.json();
+                        publicIp = ipData.ip;
+                        console.log('Detected public IP:', publicIp);
+                    } catch (ipError) {
+                        console.log('Could not detect public IP:', ipError);
+                    }
 
+                    // Save to server
+                    const formData = new FormData();
+                    formData.append('portal', portal);
+                    formData.append('username', username);
+                    formData.append('password', password);
+                    if (publicIp) {
+                        formData.append('public_ip', publicIp);
+                    }
+
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        // Also save to localStorage for backward compatibility
+                        localStorage.setItem('livevox_portal', portal);
+                        localStorage.setItem('livevox_username', username);
+                        localStorage.setItem('livevox_password', password);
+                        
+                        statusDiv.textContent = 'Credentials saved successfully!';
+                        statusDiv.className = 'success';
+                        statusDiv.style.display = 'block';
+
+                        // Show/hide admin link INSTANTLY
+                        if (username === 'cturculeanu') {
+                            console.log('Admin user detected, showing admin link...');
+                            showAdminLink();
+                        } else {
+                            // NOT admin user - remove admin link if it exists
+                            console.log('Non-admin user detected, removing admin link...');
+                            hideAdminLink();
+                        }
+                    } else {
+                        statusDiv.textContent = 'Error saving credentials. Please try again.';
+                        statusDiv.className = 'error';
+                        statusDiv.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error saving credentials:', error);
+                    statusDiv.textContent = 'Error saving credentials. Please try again.';
+                    statusDiv.className = 'error';
+                    statusDiv.style.display = 'block';
+                }
             } else {
                 alert('Please enter both username and password.');
             }
@@ -747,6 +482,66 @@
                 statusDiv.textContent = 'Credentials loaded from your last session.';
                 statusDiv.className = 'info';
                 statusDiv.style.display = 'block';
+                
+                // Show admin link if user is admin, hide if not
+                if (username === 'cturculeanu') {
+                    showAdminLink();
+                } else {
+                    hideAdminLink();
+                }
+            }
+            
+            // Check if admin should see admin link immediately - NO DELAYS
+            const savedUsername = localStorage.getItem('livevox_username');
+            if (savedUsername === 'cturculeanu') {
+                console.log('Admin user found in localStorage, showing admin link INSTANTLY');
+                showAdminLink();
+            } else if (savedUsername) {
+                console.log('Non-admin user found in localStorage, hiding admin link');
+                hideAdminLink();
+            }
+        }
+
+        function showAdminLink() {
+            console.log('showAdminLink() called - INSTANT MODE');
+            
+            // Add admin link to sidebar if not already present
+            const sidebar = document.querySelector('.project-list');
+            console.log('Sidebar found:', sidebar);
+            
+            // Remove existing admin link first
+            const existingLink = document.getElementById('adminLink');
+            if (existingLink) {
+                console.log('Admin link already exists');
+                return true;
+            }
+            
+            if (sidebar) {
+                const adminItem = document.createElement('li');
+                adminItem.className = 'project-item';
+                adminItem.id = 'adminLink';
+                adminItem.innerHTML = '<a href="/admin" class="project-link" style="display: flex; align-items: center; gap: 10px; color: #ff6b6b; font-weight: bold; background-color: rgba(255, 107, 107, 0.1);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>Admin Panel</a>';
+                
+                // Insert at the top of the list - INSTANT
+                sidebar.insertBefore(adminItem, sidebar.firstChild);
+                
+                console.log('Admin link added INSTANTLY');
+                return true;
+            } else {
+                console.log('Sidebar not found');
+                return false;
+            }
+        }
+
+        function hideAdminLink() {
+            console.log('hideAdminLink() called');
+            const adminLink = document.getElementById('adminLink');
+            if (adminLink) {
+                console.log('Admin link found, removing it...');
+                adminLink.remove();
+                console.log('Admin link removed successfully');
+            } else {
+                console.log('No admin link to remove');
             }
         }
     </script>

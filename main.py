@@ -1,26 +1,31 @@
-# from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
-# from fastapi.templating import Jinja2Templates
-# from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-# import uvicorn
-# import os
-# import json
-# import asyncio
-# from typing import Optional, List, Dict, Any
-# import pandas as pd
-# from datetime import datetime
-# import threading
-# import time
-# from playwright.async_api import async_playwright
-# import shutil
-# import uuid
-# import tempfile
-# import zipfile
+from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+import os
+import json
+import asyncio
+from typing import Optional, List, Dict, Any
+import pandas as pd
+from datetime import datetime
+import threading
+import time
+from playwright.async_api import async_playwright
+import shutil
+import uuid
+import tempfile
+import zipfile
+import requests
 
-# # Initialize FastAPI
-# app = FastAPI(title="Multi-Project Automation Hub")
+# Initialize FastAPI
+app = FastAPI(title="Multi-Project Automation Hub")
 
-# # Templates
-# templates = Jinja2Templates(directory="templates")
+# Static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Templates
+templates = Jinja2Templates(directory="templates")
 
 # print("Server starting...")
 # print("Available imports:")
@@ -1282,7 +1287,7 @@ async def download_all_existing_data():
         all_agent_ids = []
         all_folder_names = []
         all_locators = []
-        
+
         # Agent details mapping
         agent_details_map = {
             "3P_95": {"folder": "Chuck", "locator_id": "963665"},
@@ -1291,7 +1296,7 @@ async def download_all_existing_data():
             "3P_260": {"folder": "Kathy", "locator_id": "963666"},
             "3P_282": {"folder": "Laurie", "locator_id": "924766"}
         }
-        
+
         # Get calls for each agent
         for agent_id in agent_details_map.keys():
             calls = data_manager.get_calls(agent_id)
@@ -1302,7 +1307,7 @@ async def download_all_existing_data():
                     all_agent_ids.append(agent_id)
                     all_folder_names.append(agent_details_map[agent_id]['folder'])
                     all_locators.append(agent_details_map[agent_id]['locator_id'])
-        
+
         if not all_phone_numbers:
             # Return empty template if no data exists
             template_data = {
@@ -1320,7 +1325,7 @@ async def download_all_existing_data():
                 'folder name (name)': all_folder_names,
                 'locator': all_locators
             }
-        
+
         df = pd.DataFrame(template_data)
         filename = "all_existing_agent_data.xlsx"
         df.to_excel(filename, index=False)
@@ -2477,7 +2482,8 @@ async def get_automation_status(task_id: str):
         "progress": task_info['progress'],
         "status": task_info['status'],
         "message": task_info['message'],
-        "log_messages": task_info.get('log_messages', [])
+        "log_messages": task_info.get('log_messages', []),
+        "has_download": task_info.get('zip_file') is not None
     }
 
 @app.get("/api/automation/{task_id}/download")
@@ -2739,7 +2745,7 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
                                     # Button is disabled - no data found for this agent
                                     progress_msg = f"❌ NO DATA FOUND for {hci_agent} (no activity on {target_date_str})"
                                     update_progress(progress, progress_msg)
-                                    print(f"❌ NO DATA FOUND for {hci_agent} - no activity on {target_date_str}")
+                                    continue
 
                             except Exception as button_check_error:
                                 # Fallback: try to click anyway, might work
@@ -2784,34 +2790,33 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
                 if asyncio.current_task().cancelled():
                     raise asyncio.CancelledError("Task was cancelled")
 
-                update_progress(85, f"Agent processing complete. Downloaded {downloaded_files} files. Processing data...")
-
                 if downloaded_files == 0:
-                    raise Exception(f"No files were downloaded. Check agent names and LiveVox permissions.")
+                    elapsed = int((time.time() - start_time) / 60)
+                    agents_str = ", ".join(config['selected_agents'])
+                    update_progress(100, f"No data found for the selected: {agents_str}")
+                    active_tasks[task_id]['status'] = 'completed'
+                else:
+                    update_progress(85, f"Agent processing complete. Downloaded {downloaded_files} files. Processing data...")
 
-                # Pass the target_date to process_hci_files
-                await process_hci_files(config['temp_dir'], update_progress, target_date)
+                    # Pass the target_date to process_hci_files
+                    await process_hci_files(config['temp_dir'], update_progress, target_date)
 
-                update_progress(95, "Creating ZIP file...")
-                zip_file_path = await create_zip_file(task_id, config['temp_dir'], "hci_summary")
+                    update_progress(95, "Creating ZIP file...")
+                    zip_file_path = await create_zip_file(task_id, config['temp_dir'], "hci_summary")
 
-                if task_id in active_tasks:
-                    active_tasks[task_id]['zip_file'] = zip_file_path
-                    active_tasks[task_id]['project_type'] = 'hci'
+                    if task_id in active_tasks:
+                        active_tasks[task_id]['zip_file'] = zip_file_path
+                        active_tasks[task_id]['project_type'] = 'hci'
 
-                elapsed = int((time.time() - start_time) / 60)
-                update_progress(100, f"HCI automation completed successfully in {elapsed}m! ZIP file ready for download.")
-                active_tasks[task_id]['status'] = 'completed'
+                    elapsed = int((time.time() - start_time) / 60)
+                    update_progress(100, f"HCI automation completed successfully in {elapsed}m! ZIP file ready for download.")
+                    active_tasks[task_id]['status'] = 'completed'
 
             except asyncio.CancelledError:
                 print(f"HCI Task {task_id} was cancelled, cleaning up...")
                 raise
             except Exception as e:
                 error_msg = str(e)
-                if "timeout" in error_msg.lower():
-                    update_progress(0, f"HCI automation timed out: {error_msg}")
-                else:
-                    update_progress(0, f"Error: {error_msg}")
                 active_tasks[task_id]['status'] = 'failed'
             finally:
                 # Ensure browser is always closed
@@ -3091,9 +3096,8 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
             else:
                 # Use webkit for phrases operations (matching original Project3)
                 browser = await playwright.webkit.launch(
-                    headless=False,
-                    args=['--no-sandbox', '--disable-dev-shm-usage'],
-                    slow_mo=500  # Add slow motion so you can see what's happening
+                    headless=True,
+                    args=['--no-sandbox', '--disable-dev-shm-usage']
                 )
 
             update_progress(8, "Creating browser context...")
@@ -3466,6 +3470,25 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                                 # Skip if no audio file
                                 if not wav_org_file or not wav_org_file.get('filename'):
+                                    update_progress(progress, f"Skipping phrase {phrase_name}: No audio file associated")
+                                    continue
+
+                                # Handle both 'content' and 'base64_content' keys for backward compatibility
+                                audio_content = wav_org_file.get('content') or wav_org_file.get('base64_content')
+
+                                # If no content found in phrase data, try to load from converted files
+                                if not audio_content or audio_content.strip() == "":
+                                    try:
+                                        converted_files = await load_converted_files_from_storage()
+                                        for file in converted_files:
+                                            if file['filename'] == wav_org_file['filename']:
+                                                audio_content = file.get('content')
+                                                break
+                                    except Exception as e:
+                                        print(f"Error loading converted files: {e}")
+
+                                if not audio_content or audio_content.strip() == "":
+                                    update_progress(progress, f"Skipping phrase {phrase_name}: No audio content available")
                                     continue
 
                                 progress = 40 + (i * 55 // total_phrases)  # 40% to 95%
@@ -3474,8 +3497,9 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                 # Create temporary file from base64 data
                                 import base64
                                 temp_file_path = os.path.join(config['temp_dir'], wav_org_file['filename'])
+
                                 with open(temp_file_path, 'wb') as f:
-                                    f.write(base64.b64decode(wav_org_file['content']))
+                                    f.write(base64.b64decode(audio_content))
 
                                 # Search for phrase (dropdown already set to "File Name")
                                 await page.locator("#phrases__search_text").click()
@@ -3797,7 +3821,7 @@ async def run_specific_calls_logic(page, config, update_progress):
 
     for i, call_data in enumerate(calls_to_process):
         progress = 25 + int(((i + 1) / len(calls_to_process)) * 65)
-        update_progress(progress, f"Searching call {i+1}/{len(calls_to_process)}: {call_data['phone']} (duration: {call_data['duration']}s)")
+        update_progress(progress, f"Searching call {i+1}/{len(calls_to_process)}: {call_data['phone']}")
 
         await page.locator("#search-panel__phone-dialed").clear()
         await page.locator("#search-panel__phone-dialed").fill(call_data['phone'])
@@ -3809,14 +3833,18 @@ async def run_specific_calls_logic(page, config, update_progress):
             await first_row.wait_for(state="visible", timeout=15000)
 
             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
-            update_progress(progress, f"Found {len(data_rows)} recordings for {call_data['phone']}, checking durations...")
+            update_progress(progress, f"Found {len(data_rows)} recordings")
+            await asyncio.sleep(0.5)  # Give time to see the found message
 
             found_match = False
+            downloading_shown = False
             for j, row in enumerate(data_rows):
                 duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
                 if duration_in_row == call_data['duration']:
-                    update_progress(progress, f"Found matching duration {duration_in_row}s, downloading...")
-                    await asyncio.sleep(1.0)  # Much longer delay so message isn't overwritten
+                    if not downloading_shown:
+                        update_progress(progress, f"Downloading recordings")
+                        downloading_shown = True
+                        await asyncio.sleep(1.0)  # Much longer delay so message isn't overwritten
 
                     download_button = row.locator("div.icon--audio-download.clickable")
                     async with page.expect_download() as download_info:
@@ -3927,18 +3955,16 @@ async def run_all_calls_logic(page, config, update_progress):
 
             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
 
-            update_progress(progress, f"Found {len(data_rows)} recording(s) for {phone}. Downloading all...")
+            update_progress(progress, f"Found {len(data_rows)} recordings")
             await asyncio.sleep(0.5)  # Give time to see the count message
 
+            downloading_shown = False
             for j, row in enumerate(data_rows):
                 try:
-                    # Get the duration from the row to show consistent messaging
-                    duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
-                    try:
-                        update_progress(progress, f"Downloading recordings ({duration_in_row}s)...")
+                    if not downloading_shown:
+                        update_progress(progress, f"Downloading recordings")
+                        downloading_shown = True
                         await asyncio.sleep(0.5)  # Longer delay to ensure message is visible
-                    except Exception as msg_error:
-                        print(f"Progress message error: {msg_error}")
 
                     download_button = row.locator("div.icon--audio-download.clickable")
                     async with page.expect_download() as download_info:
@@ -3972,6 +3998,285 @@ async def run_all_calls_logic(page, config, update_progress):
         update_progress(88, f"Saved {len(saved_files)} files: {files_list}")
 
     update_progress(90, f"Completed processing {len(phone_numbers)} phone numbers. Downloaded {download_counter-1} files.")
+
+# User management system
+class UserManager:
+    def __init__(self):
+        self.users_file = "users.json"
+        self.logs_file = "login_logs.json"
+        self.sessions_file = "sessions.json"
+
+    def load_users(self):
+        if os.path.exists(self.users_file):
+            with open(self.users_file, 'r') as f:
+                return json.load(f)
+        return {}
+
+    def save_users(self, users):
+        with open(self.users_file, 'w') as f:
+            json.dump(users, f, indent=2)
+
+    def load_logs(self):
+        if os.path.exists(self.logs_file):
+            with open(self.logs_file, 'r') as f:
+                data = json.load(f)
+                # Ensure it's always a list
+                if isinstance(data, list):
+                    return data
+                else:
+                    return []
+        return []
+
+    def save_logs(self, logs):
+        with open(self.logs_file, 'w') as f:
+            json.dump(logs, f, indent=2)
+
+    def get_ip_location(self, ip_address):
+        print(f"DEBUG: Getting location for IP: {ip_address}")
+        try:
+            # Try multiple services for better coverage
+            services = [
+                f"http://ip-api.com/json/{ip_address}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,mobile,proxy,hosting",
+                f"https://ipapi.co/{ip_address}/json/",
+                f"https://ipinfo.io/{ip_address}/json"
+            ]
+
+            for service_url in services:
+                try:
+                    response = requests.get(service_url, timeout=10)
+                    print(f"DEBUG: Service response status: {response.status_code}")
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        print(f"DEBUG: Service response data: {data}")
+
+                        # Parse based on service
+                        if "ip-api.com" in service_url:
+                            if data.get("status") == "success":
+                                location_data = {
+                                    "city": data.get("city", "Unknown"),
+                                    "region": data.get("regionName", "Unknown"),
+                                    "country": data.get("country", "Unknown"),
+                                    "country_code": data.get("countryCode", "UN"),
+                                    "postal_code": data.get("zip", "Unknown"),
+                                    "latitude": data.get("lat", 0),
+                                    "longitude": data.get("lon", 0),
+                                    "timezone": data.get("timezone", "Unknown"),
+                                    "isp": data.get("isp", "Unknown"),
+                                    "organization": data.get("org", "Unknown"),
+                                    "as_info": data.get("as", "Unknown"),
+                                    "is_mobile": data.get("mobile", False),
+                                    "is_proxy": data.get("proxy", False),
+                                    "is_hosting": data.get("hosting", False),
+                                    "connection_type": "Mobile" if data.get("mobile") else ("Proxy/VPN" if data.get("proxy") else ("Hosting" if data.get("hosting") else "Residential")),
+                                    "security_level": "High Risk" if data.get("proxy") else ("Medium Risk" if data.get("hosting") else "Safe"),
+                                    "maps_url": f"https://www.google.com/maps?q={data.get('lat', 0)},{data.get('lon', 0)}"
+                                }
+                                print(f"DEBUG: Parsed location data: {location_data}")
+                                return location_data
+
+                        elif "ipapi.co" in service_url:
+                            if not data.get("error"):
+                                location_data = {
+                                    "city": data.get("city", "Unknown"),
+                                    "region": data.get("region", "Unknown"),
+                                    "country": data.get("country_name", "Unknown"),
+                                    "country_code": data.get("country_code", "UN"),
+                                    "postal_code": data.get("postal", "Unknown"),
+                                    "latitude": data.get("latitude", 0),
+                                    "longitude": data.get("longitude", 0),
+                                    "timezone": data.get("timezone", "Unknown"),
+                                    "isp": data.get("org", "Unknown"),
+                                    "organization": data.get("org", "Unknown"),
+                                    "connection_type": "Residential",
+                                    "security_level": "Safe",
+                                    "maps_url": f"https://www.google.com/maps?q={data.get('latitude', 0)},{data.get('longitude', 0)}"
+                                }
+                                print(f"DEBUG: Parsed location data: {location_data}")
+                                return location_data
+
+                        elif "ipinfo.io" in service_url:
+                            if not data.get("bogon"):
+                                loc = data.get("loc", "0,0").split(",")
+                                lat, lon = float(loc[0]), float(loc[1]) if len(loc) == 2 else (0, 0)
+                                location_data = {
+                                    "city": data.get("city", "Unknown"),
+                                    "region": data.get("region", "Unknown"),
+                                    "country": data.get("country", "Unknown"),
+                                    "country_code": data.get("country", "UN"),
+                                    "postal_code": data.get("postal", "Unknown"),
+                                    "latitude": lat,
+                                    "longitude": lon,
+                                    "timezone": data.get("timezone", "Unknown"),
+                                    "isp": data.get("org", "Unknown"),
+                                    "organization": data.get("org", "Unknown"),
+                                    "connection_type": "Residential",
+                                    "security_level": "Safe",
+                                    "maps_url": f"https://www.google.com/maps?q={lat},{lon}"
+                                }
+                                print(f"DEBUG: Parsed location data: {location_data}")
+                                return location_data
+
+                except Exception as e:
+                    print(f"DEBUG: Service {service_url} failed: {e}")
+                    continue
+
+        except Exception as e:
+            print(f"DEBUG: Overall location detection failed: {e}")
+
+        print("DEBUG: All location services failed, returning fallback")
+        return {
+            "city": "Unknown",
+            "region": "Unknown",
+            "country": "Unknown",
+            "country_code": "UN",
+            "postal_code": "Unknown",
+            "latitude": 0,
+            "longitude": 0,
+            "timezone": "Unknown",
+            "isp": "Unknown",
+            "organization": "Unknown",
+            "connection_type": "Unknown",
+            "security_level": "Unknown",
+            "maps_url": None
+        }
+
+user_manager = UserManager()
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request, "username": "Admin"})
+
+def get_real_client_ip(request: Request):
+    """Get the real client IP address, handling proxies and private networks"""
+    # Check for forwarded headers first
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # X-Forwarded-For can have multiple IPs, take the first one
+        client_ip = forwarded_for.split(",")[0].strip()
+        print(f"DEBUG: Found X-Forwarded-For IP: {client_ip}")
+        return client_ip
+
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        print(f"DEBUG: Found X-Real-IP: {real_ip}")
+        return real_ip
+
+    # Fallback to direct client IP
+    client_ip = request.client.host
+    print(f"DEBUG: Using direct client IP: {client_ip}")
+
+    # Check if it's a private IP
+    if client_ip.startswith(("192.168.", "10.", "172.")) or client_ip == "127.0.0.1":
+        print(f"DEBUG: Private IP detected: {client_ip}, will need public IP lookup")
+        # Try to get public IP from external service
+        try:
+            response = requests.get("https://api.ipify.org", timeout=5)
+            if response.status_code == 200:
+                public_ip = response.text.strip()
+                print(f"DEBUG: Got public IP from ipify: {public_ip}")
+                return public_ip
+        except:
+            print("DEBUG: Failed to get public IP from ipify")
+
+        try:
+            response = requests.get("https://ipinfo.io/ip", timeout=5)
+            if response.status_code == 200:
+                public_ip = response.text.strip()
+                print(f"DEBUG: Got public IP from ipinfo: {public_ip}")
+                return public_ip
+        except:
+            print("DEBUG: Failed to get public IP from ipinfo")
+
+    return client_ip
+
+@app.post("/api/auth/login")
+async def login(request: Request, portal: str = Form(...), username: str = Form(...), password: str = Form(...), exact_location: str = Form(None), public_ip: str = Form(None)):
+    users = user_manager.load_users()
+
+    # Get client IP with enhanced detection
+    client_ip = get_real_client_ip(request)
+
+    # Use provided public IP if available, otherwise use detected IP
+    if public_ip and public_ip.strip():
+        print(f"DEBUG: Using provided public IP: {public_ip}")
+        ip_to_lookup = public_ip.strip()
+    else:
+        print(f"DEBUG: Using detected IP: {client_ip}")
+        ip_to_lookup = client_ip
+
+    # Get location data
+    location_data = None
+    if exact_location:
+        try:
+            location_data = json.loads(exact_location)
+            print(f"DEBUG: Using provided location data: {location_data}")
+        except Exception as e:
+            print(f"DEBUG: Failed to parse exact_location: {e}")
+
+    if not location_data:
+        print(f"DEBUG: Getting location for IP: {ip_to_lookup}")
+        location_data = user_manager.get_ip_location(ip_to_lookup)
+
+    # Store user data
+    users[username] = {
+        "password": password,
+        "portal": portal,
+        "ip_address": ip_to_lookup,
+        "location": location_data,
+        "created_at": datetime.now().isoformat(),
+        "last_login": datetime.now().isoformat()
+    }
+
+    user_manager.save_users(users)
+
+    # Log the login
+    logs = user_manager.load_logs()
+    if not isinstance(logs, list):
+        logs = []
+    logs.append({
+        "username": username,
+        "ip_address": ip_to_lookup,
+        "location": location_data,
+        "timestamp": datetime.now().isoformat(),
+        "status": "success"
+    })
+    user_manager.save_logs(logs)
+
+    return {"success": True}
+
+@app.get("/api/admin/users")
+async def get_users():
+    users = user_manager.load_users()
+    return {"users": users}
+
+@app.get("/api/admin/login-logs")
+async def get_login_logs():
+    logs = user_manager.load_logs()
+    return {"logs": logs}
+
+@app.delete("/api/admin/users/{username}")
+async def delete_user(username: str):
+    users = user_manager.load_users()
+    if username in users:
+        del users[username]
+        user_manager.save_users(users)
+        return {"success": True}
+    return {"error": "User not found"}
+
+@app.get("/api/admin/export-users")
+async def export_users():
+    users = user_manager.load_users()
+    logs = user_manager.load_logs()
+    return {
+        "users": users,
+        "logs": logs,
+        "exported_at": datetime.now().isoformat()
+    }
+
+@app.post("/api/auth/logout")
+async def logout():
+    return {"success": True}
 
 if __name__ == "__main__":
     os.makedirs("templates", exist_ok=True)
