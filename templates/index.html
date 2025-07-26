@@ -351,6 +351,12 @@
                 </form>
             </div>
 
+            <div style="margin: 40px 0; padding: 30px; border: 2px solid #000000; border-radius: 8px; background-color: rgba(0, 0, 0, 0.02); max-width: 600px;">
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">Reset All Automation States</h3>
+                <p style="font-size: 16px; color: #666666; margin-bottom: 20px;">This will stop all running automations and clear all task states.</p>
+                <button id="resetBtn" class="btn" style="background-color: #d63031; border-color: #d63031;">Reset All States</button>
+            </div>
+
             <div class="project-grid">
                 <a href="/livevox" class="project-card">
                     <div>
@@ -396,6 +402,10 @@
             const form = document.getElementById('credentialsForm');
             form.addEventListener('submit', saveCredentials);
             loadCredentials();
+            
+            // Add reset button functionality
+            const resetBtn = document.getElementById('resetBtn');
+            resetBtn.addEventListener('click', resetAllStates);
         });
 
         async function saveCredentials(event) {
@@ -542,6 +552,60 @@
                 console.log('Admin link removed successfully');
             } else {
                 console.log('No admin link to remove');
+            }
+        }
+
+        async function resetAllStates() {
+            const resetBtn = document.getElementById('resetBtn');
+            
+            try {
+                // Disable button and show loading state
+                resetBtn.disabled = true;
+                resetBtn.textContent = 'Resetting...';
+                resetBtn.style.opacity = '0.6';
+                
+                const response = await fetch('/api/automation/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Clear all localStorage progress states for all projects
+                    const projectNames = ['add_phrases', 'hci_summary', 'call_automation'];
+                    projectNames.forEach(projectName => {
+                        const storageKey = `livevox_progress_${projectName}`;
+                        localStorage.removeItem(storageKey);
+                        console.log(`Cleared progress state for ${projectName}`);
+                    });
+                    
+                    // Clear any other automation-related localStorage items
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.includes('automation_') || key.includes('task_') || key.includes('progress_')) {
+                            localStorage.removeItem(key);
+                            console.log(`Cleared localStorage item: ${key}`);
+                        }
+                    });
+                    
+                    alert(result.message + '\n\nThe page will now refresh to clear all frontend states.');
+                    
+                    // Force browser refresh (equivalent to Ctrl+F5)
+                    window.location.reload(true);
+                } else {
+                    const error = await response.text();
+                    alert('Error resetting states: ' + error);
+                }
+            } catch (error) {
+                console.error('Reset error:', error);
+                alert('Error resetting states: ' + error.message);
+            } finally {
+                // Re-enable button
+                resetBtn.disabled = false;
+                resetBtn.textContent = 'Reset All States';
+                resetBtn.style.opacity = '1';
             }
         }
     </script>

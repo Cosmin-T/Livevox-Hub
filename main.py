@@ -1,848 +1,6 @@
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-import uvicorn
-import os
-import json
-import asyncio
-from typing import Optional, List, Dict, Any
-import pandas as pd
-from datetime import datetime
-import threading
-import time
-from playwright.async_api import async_playwright
-import shutil
-import uuid
-import tempfile
-import zipfile
-import requests
-
-# Initialize FastAPI
-app = FastAPI(title="Multi-Project Automation Hub")
-
-# Static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Templates
-templates = Jinja2Templates(directory="templates")
-
-# print("Server starting...")
-# print("Available imports:")
-# print("- FastAPI:", FastAPI.__version__ if hasattr(FastAPI, '__version__') else "imported")
-# print("- Playwright: imported")
-# print("- Pandas:", pd.__version__)
-# print("- All other dependencies: imported")
-
-# class DataManager:
-#     """Manages agent and call data using local JSON storage"""
-#     def __init__(self, project_name="livevox"):
-#         self.project_name = project_name
-#         self.local_file = f"{project_name}_data.json"
-#         print(f"Using local storage: {self.local_file}")
-
-#     def load_data(self):
-#         """Load data from local JSON file"""
-#         if os.path.exists(self.local_file):
-#             try:
-#                 with open(self.local_file, 'r') as f:
-#                     data = json.load(f)
-#                     print(f"Loaded data from {self.local_file}")
-#                     return data
-#             except Exception as e:
-#                 print(f"Error loading {self.local_file}: {e}")
-
-#         # Return default structure if file doesn't exist
-#         default_data = {"agents": {}, "calls": {}}
-#         self.save_data(default_data)
-#         return default_data
-
-#     def save_data(self, data):
-#         """Save data to local JSON file"""
-#         try:
-#             with open(self.local_file, 'w') as f:
-#                 json.dump(data, f, indent=2)
-#             print(f"Data saved to {self.local_file}")
-#             return True
-#         except Exception as e:
-#             print(f"Error saving to {self.local_file}: {e}")
-#             return False
-
-#     def add_agent(self, agent_data):
-#         data = self.load_data()
-#         agent_id = agent_data['id']
-#         data['agents'][agent_id] = agent_data
-#         if agent_id not in data['calls']:
-#             data['calls'][agent_id] = []
-#         self.save_data(data)
-
-#     def remove_agent(self, agent_id):
-#         data = self.load_data()
-#         if agent_id in data['agents']:
-#             del data['agents'][agent_id]
-#         if agent_id in data['calls']:
-#             del data['calls'][agent_id]
-#         self.save_data(data)
-
-#     def remove_all_agents(self):
-#         data = {"agents": {}, "calls": {}}
-#         self.save_data(data)
-
-#     def add_call(self, agent_id, call_data):
-#         data = self.load_data()
-#         if agent_id not in data['calls']:
-#             data['calls'][agent_id] = []
-#         data['calls'][agent_id].append(call_data)
-#         self.save_data(data)
-
-#     def remove_all_calls(self, agent_id):
-#         data = self.load_data()
-#         if agent_id in data['calls']:
-#             data['calls'][agent_id] = []
-#             self.save_data(data)
-
-#     def remove_call(self, agent_id, call_index):
-#         data = self.load_data()
-#         if agent_id in data['calls'] and 0 <= call_index < len(data['calls'][agent_id]):
-#             del data['calls'][agent_id][call_index]
-#             self.save_data(data)
-
-#     def get_agents(self):
-#         return self.load_data()['agents']
-
-#     def get_calls(self, agent_id):
-#         return self.load_data()['calls'].get(agent_id, [])
-
-# # Global data manager
-# data_manager = DataManager()
-
-# @app.get("/", response_class=HTMLResponse)
-# async def root(request: Request):
-#     return templates.TemplateResponse("index.html", {"request": request})
-
-# @app.get("/debug/routes")
-# async def debug_routes():
-#     """Debug endpoint to see all registered routes"""
-#     routes = []
-#     for route in app.routes:
-#         if hasattr(route, 'methods') and hasattr(route, 'path'):
-#             routes.append({
-#                 "path": route.path,
-#                 "methods": list(route.methods),
-#                 "name": getattr(route, 'name', 'unknown')
-#             })
-#     return {"routes": routes}
-
-# @app.put("/debug/test-put")
-# async def test_put(test_data: str = Form(...)):
-#     """Simple PUT endpoint to test if PUT requests work"""
-#     return {"success": True, "received": test_data}
-
-# @app.post("/debug/test-automation")
-# async def test_automation_endpoint(
-#     function_type: str = Form(...),
-#     agent_id: str = Form(...),
-#     start_date: str = Form(...),
-#     username: str = Form(...),
-#     password: str = Form(...),
-#     url: str = Form(...),
-#     phone_numbers: Optional[str] = Form(None)
-# ):
-#     """Test endpoint with same signature as automation endpoint"""
-#     print("DEBUG: Test automation endpoint called successfully!")
-#     return {
-#         "success": True,
-#         "message": "Test endpoint works!",
-#         "received_data": {
-#             "function_type": function_type,
-#             "agent_id": agent_id,
-#             "start_date": start_date,
-#             "username": username,
-#             "url": url,
-#             "phone_numbers": phone_numbers
-#         }
-#     }
-
-# @app.get("/debug/endpoints")
-# async def list_endpoints():
-#     """List all available endpoints"""
-#     routes = []
-#     for route in app.routes:
-#         if hasattr(route, 'methods') and hasattr(route, 'path'):
-#             routes.append({
-#                 "path": route.path,
-#                 "methods": list(route.methods),
-#                 "name": getattr(route, 'name', 'unknown')
-#             })
-#     return {"routes": routes}
-
-# @app.get("/livevox", response_class=HTMLResponse)
-# async def livevox_app(request: Request):
-#     agents = data_manager.get_agents()
-#     return templates.TemplateResponse("livevox.html", {
-#         "request": request,
-#         "agents": agents
-#     })
-
-# # Agent management endpoints
-# @app.post("/api/agents")
-# async def create_agent(agent_id: str = Form(...), folder: str = Form(...), locator_id: str = Form(...)):
-#     if agent_id in data_manager.get_agents():
-#         raise HTTPException(status_code=400, detail="Agent ID already exists")
-
-#     agent_data = {
-#         'id': agent_id,
-#         'folder': folder,
-#         'locator_id': locator_id
-#     }
-#     data_manager.add_agent(agent_data)
-#     return {"success": True}
-
-# @app.get("/api/agents")
-# async def get_agents():
-#     return data_manager.get_agents()
-
-# @app.put("/api/agents/{agent_id}")
-# async def update_agent(agent_id: str, agent_id_field: str = Form(..., alias="agent_id"), folder: str = Form(...), locator_id: str = Form(...)):
-#     print(f"PUT /api/agents/{agent_id} called with data: agent_id={agent_id_field}, folder={folder}, locator_id={locator_id}")
-
-#     try:
-#         data = data_manager.load_data()
-
-#         if agent_id not in data['agents']:
-#             raise HTTPException(status_code=404, detail="Agent not found")
-
-#         # The agent_id from the URL is the current ID, agent_id_field is from the form
-#         # If agent ID is changing, we need to update the key
-#         if agent_id != agent_id_field:
-#             if agent_id_field in data['agents']:
-#                 raise HTTPException(status_code=400, detail="New Agent ID already exists")
-
-#             # Move agent data to new key
-#             data['agents'][agent_id_field] = {
-#                 'id': agent_id_field,
-#                 'folder': folder,
-#                 'locator_id': locator_id
-#             }
-#             del data['agents'][agent_id]
-
-#             # Move calls data
-#             if agent_id in data['calls']:
-#                 data['calls'][agent_id_field] = data['calls'][agent_id]
-#                 del data['calls'][agent_id]
-#         else:
-#             # Just update the existing agent
-#             data['agents'][agent_id] = {
-#                 'id': agent_id_field,
-#                 'folder': folder,
-#                 'locator_id': locator_id
-#             }
-
-#         data_manager.save_data(data)
-#         print(f"Agent updated successfully: {agent_id} -> {agent_id_field}")
-#         return {"success": True, "new_agent_id": agent_id_field}
-
-#     except Exception as e:
-#         print(f"Error updating agent: {str(e)}")
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.delete("/api/agents/{agent_id}")
-# async def delete_agent(agent_id: str):
-#     data_manager.remove_agent(agent_id)
-#     return {"success": True}
-
-# @app.post("/api/agents/{agent_id}/calls")
-# async def add_call(agent_id: str, phone: str = Form(...), duration: str = Form(...)):
-#     call_data = {'phone': phone, 'duration': duration}
-#     data_manager.add_call(agent_id, call_data)
-#     return {"success": True}
-
-# @app.get("/api/agents/{agent_id}/calls")
-# async def get_calls(agent_id: str):
-#     return data_manager.get_calls(agent_id)
-
-# @app.put("/api/agents/{agent_id}/calls/{call_index}")
-# async def update_call(agent_id: str, call_index: int, phone: str = Form(...), duration: str = Form(...)):
-#     print(f"PUT /api/agents/{agent_id}/calls/{call_index} called with phone={phone}, duration={duration}")
-
-#     try:
-#         data = data_manager.load_data()
-
-#         if agent_id not in data['calls']:
-#             raise HTTPException(status_code=404, detail="Agent not found")
-
-#         if call_index >= len(data['calls'][agent_id]) or call_index < 0:
-#             raise HTTPException(status_code=404, detail="Call not found")
-
-#         data['calls'][agent_id][call_index] = {'phone': phone, 'duration': duration}
-#         data_manager.save_data(data)
-#         print(f"Call updated successfully: agent={agent_id}, index={call_index}")
-#         return {"success": True}
-
-#     except Exception as e:
-#         print(f"Error updating call: {str(e)}")
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.delete("/api/agents/{agent_id}/calls/{call_index}")
-# async def delete_call(agent_id: str, call_index: int):
-#     data_manager.remove_call(agent_id, call_index)
-#     return {"success": True}
-
-# @app.post("/api/upload-excel")
-# async def upload_excel(file: UploadFile = File(...)):
-#     try:
-#         contents = await file.read()
-
-#         # Save temp file
-#         temp_path = f"temp_{uuid.uuid4().hex}.xlsx"
-#         with open(temp_path, "wb") as f:
-#             f.write(contents)
-
-#         # Read Excel
-#         df = pd.read_excel(temp_path, dtype=str)
-#         os.remove(temp_path)
-
-#         required_cols = {'phone number', 'duration', 'agent ID', 'folder name (name)', 'locator'}
-#         if not required_cols.issubset(df.columns):
-#             missing = required_cols - set(df.columns)
-#             raise HTTPException(status_code=400, detail=f"Missing columns: {', '.join(missing)}")
-
-#         agents_created = 0
-#         calls_added = 0
-
-#         for _, row in df.iterrows():
-#             agent_id = str(row.get('agent ID', '')).strip()
-#             folder = str(row.get('folder name (name)', '')).strip()
-#             locator = str(row.get('locator', '')).strip()
-#             phone = str(row.get('phone number', '')).strip()
-#             duration = str(row.get('duration', '')).strip()
-
-#             if not all([agent_id, folder, locator, phone, duration]):
-#                 continue
-
-#             # Create agent if doesn't exist
-#             if agent_id not in data_manager.get_agents():
-#                 agent_data = {
-#                     'id': agent_id,
-#                     'folder': folder,
-#                     'locator_id': locator
-#                 }
-#                 data_manager.add_agent(agent_data)
-#                 agents_created += 1
-
-#             # Add call
-#             call_data = {'phone': phone, 'duration': duration}
-#             data_manager.add_call(agent_id, call_data)
-#             calls_added += 1
-
-#         return {
-#             "success": True,
-#             "agents_created": agents_created,
-#             "calls_added": calls_added
-#         }
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.get("/api/download-template")
-# async def download_template():
-#     template_data = {
-#         'phone number': ['7021234567', '7029876543'],
-#         'duration': [65, 123],
-#         'agent ID': ['3P_95', '3P_235'],
-#         'folder name (name)': ['Chuck', 'Jim'],
-#         'locator': ['963665', '976426']
-#     }
-#     df = pd.DataFrame(template_data)
-
-#     filename = "call_upload_template.xlsx"
-#     df.to_excel(filename, index=False)
-
-#     return FileResponse(
-#         filename,
-#         filename=filename,
-#         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-#     )
-
-# @app.delete("/api/agents")
-# async def delete_all_agents():
-#     data_manager.remove_all_agents()
-#     return {"success": True}
-
-# @app.delete("/api/agents/{agent_id}/calls")
-# async def delete_all_calls_for_agent(agent_id: str):
-#     data_manager.remove_all_calls(agent_id)
-#     return {"success": True}
-
-# # Store active automation tasks with their temp directories and results
-# active_tasks = {}
-
-# # FIXED AUTOMATION ENDPOINT - NO OUTPUT_DIR REQUIRED!
-# @app.post("/api/automation/start")
-# async def start_automation_fixed(
-#     function_type: str = Form(...),
-#     agent_id: str = Form(...),
-#     start_date: str = Form(...),
-#     username: str = Form(...),
-#     password: str = Form(...),
-#     url: str = Form(...),
-#     phone_numbers: Optional[str] = Form(None)
-# ):
-#     """FIXED: No output_dir required anymore - uses temp directories"""
-#     try:
-#         print("=" * 50)
-#         print("FIXED AUTOMATION ENDPOINT CALLED")
-#         print(f"Function parameters received:")
-#         print(f"  function_type: {function_type}")
-#         print(f"  agent_id: {agent_id}")
-#         print(f"  start_date: {start_date}")
-#         print(f"  username: {username}")
-#         print(f"  url: {url}")
-#         print(f"  phone_numbers: {phone_numbers}")
-#         print("=" * 50)
-
-#         task_id = str(uuid.uuid4())
-
-#         # Create temporary directory for this task
-#         temp_dir = tempfile.mkdtemp(prefix=f"livevox_{task_id}_")
-#         print(f"Created temp directory: {temp_dir}")
-
-#         config = {
-#             'function_type': function_type,
-#             'agent_id': agent_id,
-#             'start_date': start_date,
-#             'temp_dir': temp_dir,
-#             'username': username,
-#             'password': password,
-#             'url': url,
-#             'phone_numbers': phone_numbers
-#         }
-
-#         # Start automation in background
-#         task = asyncio.create_task(run_automation(task_id, config))
-#         active_tasks[task_id] = {
-#             'task': task,
-#             'progress': 0,
-#             'status': 'running',
-#             'message': 'Starting automation...',
-#             'temp_dir': temp_dir,
-#             'zip_file': None,
-#             'agent_id': agent_id
-#         }
-
-#         print(f"Task {task_id} started successfully")
-#         return {"task_id": task_id, "success": True}
-
-#     except Exception as e:
-#         print(f"Error in FIXED automation endpoint: {str(e)}")
-#         import traceback
-#         traceback.print_exc()
-#         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
-# @app.get("/api/automation/{task_id}/status")
-# async def get_automation_status(task_id: str):
-#     if task_id not in active_tasks:
-#         raise HTTPException(status_code=404, detail="Task not found")
-
-#     task_info = active_tasks[task_id]
-#     return {
-#         "progress": task_info['progress'],
-#         "status": task_info['status'],
-#         "message": task_info['message']
-#     }
-
-# @app.get("/api/automation/{task_id}/download")
-# async def download_automation_result(task_id: str):
-#     if task_id not in active_tasks:
-#         raise HTTPException(status_code=404, detail="Task not found")
-
-#     task_info = active_tasks[task_id]
-
-#     if task_info['status'] != 'completed':
-#         raise HTTPException(status_code=400, detail="Task not completed yet")
-
-#     if not task_info['zip_file'] or not os.path.exists(task_info['zip_file']):
-#         raise HTTPException(status_code=404, detail="Download file not found")
-
-#     # Get agent info for filename
-#     agent_id = task_info.get('agent_id', 'unknown')
-#     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-#     filename = f"livevox_calls_{agent_id}_{timestamp}.zip"
-
-#     def cleanup_files():
-#         """Clean up temp files after download"""
-#         try:
-#             if os.path.exists(task_info['zip_file']):
-#                 os.remove(task_info['zip_file'])
-#             if os.path.exists(task_info['temp_dir']):
-#                 shutil.rmtree(task_info['temp_dir'])
-#             del active_tasks[task_id]
-#         except Exception as e:
-#             print(f"Error cleaning up files for task {task_id}: {e}")
-
-#     # Schedule cleanup after a delay (gives time for download to complete)
-#     threading.Timer(60.0, cleanup_files).start()
-
-#     return FileResponse(
-#         task_info['zip_file'],
-#         filename=filename,
-#         media_type="application/zip"
-#     )
-
-# async def run_automation(task_id: str, config: Dict[str, Any]):
-#     import time
-#     start_time = time.time()
-#     timeout_minutes = 30  # 30 minute timeout
-
-#     try:
-#         # Update progress function
-#         def update_progress(progress: int, message: str):
-#             if task_id in active_tasks:
-#                 elapsed = int((time.time() - start_time) / 60)
-#                 active_tasks[task_id]['progress'] = progress
-#                 active_tasks[task_id]['message'] = f"{message} (Running {elapsed}m)"
-
-#                 # Check for timeout
-#                 if elapsed >= timeout_minutes:
-#                     raise Exception(f"Automation timeout after {timeout_minutes} minutes")
-
-#         update_progress(5, "Starting browser...")
-
-#         async with async_playwright() as playwright:
-#             browser = await playwright.webkit.launch()
-#             context = await browser.new_context(accept_downloads=True)
-#             page = await context.new_page()
-#             await page.set_viewport_size({"width": 1440, "height": 1440})
-#             page.set_default_timeout(30000)
-
-#             # Add page error listener for debugging
-#             def handle_page_error(error):
-#                 print(f"Page error: {error}")
-#             page.on("pageerror", handle_page_error)
-
-#             try:
-#                 # Login with proper waits
-#                 update_progress(10, "Logging in...")
-#                 await page.goto(config['url'])
-#                 await page.locator("#username").fill(config['username'])
-#                 await page.locator("#password").fill(config['password'])
-#                 await page.locator("#password").press("Enter")
-
-#                 # Wait for login to complete and page to be fully loaded
-#                 update_progress(12, "Waiting for login to complete...")
-#                 await page.wait_for_load_state("networkidle")
-#                 await asyncio.sleep(3)  # Additional wait for page stabilization
-
-#                 # Verify we're logged in by waiting for a dashboard element
-#                 update_progress(14, "Verifying login success...")
-#                 try:
-#                     # Check current URL and page state
-#                     current_url = page.url
-#                     print(f"Current URL after login: {current_url}")
-
-#                     # Wait for any element that indicates successful login
-#                     await page.wait_for_selector("button:has-text('Review')", timeout=15000)
-#                     update_progress(15, "Login verified - Review button found")
-#                 except Exception as e:
-#                     # If Review button not found, try waiting for other common elements
-#                     update_progress(14, "Review button not immediately found, waiting longer...")
-#                     await page.wait_for_load_state("domcontentloaded")
-#                     await asyncio.sleep(2)
-
-#                     # Check if we might be on a wrong page or login failed
-#                     page_title = await page.title()
-#                     print(f"Page title: {page_title}")
-#                     if "login" in page_title.lower() or "sign" in page_title.lower():
-#                         raise Exception("Login may have failed - still on login page")
-
-#                 if config['function_type'] == 'specific_calls':
-#                     await run_specific_calls_logic(page, config, update_progress)
-#                 elif config['function_type'] == 'all_calls':
-#                     await run_all_calls_logic(page, config, update_progress)
-
-#                 # Create ZIP file after automation completes
-#                 update_progress(95, "Creating ZIP file...")
-#                 zip_file_path = await create_zip_file(task_id, config['temp_dir'], config['agent_id'])
-
-#                 if task_id in active_tasks:
-#                     active_tasks[task_id]['zip_file'] = zip_file_path
-#                     active_tasks[task_id]['agent_id'] = config['agent_id']
-
-#                 elapsed = int((time.time() - start_time) / 60)
-#                 update_progress(100, f"Automation completed successfully in {elapsed}m! ZIP file ready for download.")
-#                 active_tasks[task_id]['status'] = 'completed'
-
-#             except Exception as e:
-#                 error_msg = str(e)
-#                 if "timeout" in error_msg.lower():
-#                     update_progress(0, f"Automation timed out: {error_msg}")
-#                 else:
-#                     update_progress(0, f"Error: {error_msg}")
-#                 active_tasks[task_id]['status'] = 'failed'
-#             finally:
-#                 await browser.close()
-
-#     except Exception as e:
-#         if task_id in active_tasks:
-#             active_tasks[task_id]['status'] = 'failed'
-#             active_tasks[task_id]['message'] = f"Error: {str(e)}"
-
-# async def create_zip_file(task_id: str, temp_dir: str, agent_id: str) -> str:
-#     """Create a ZIP file containing all downloaded files"""
-#     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-#     zip_filename = f"livevox_calls_{agent_id}_{timestamp}.zip"
-#     zip_path = os.path.join(tempfile.gettempdir(), zip_filename)
-
-#     file_count = 0
-#     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-#         for root, dirs, files in os.walk(temp_dir):
-#             for file in files:
-#                 file_path = os.path.join(root, file)
-#                 # Add file to ZIP with relative path
-#                 arcname = os.path.relpath(file_path, temp_dir)
-#                 zipf.write(file_path, arcname)
-#                 file_count += 1
-
-#     print(f"Created ZIP file: {zip_path} with {file_count} files")
-#     return zip_path
-
-# async def run_specific_calls_logic(page, config, update_progress):
-#     """Implementation for Specific Calls automation logic"""
-#     agent_details_map = {
-#         "3P_95": {"folder": "Chuck", "locator_id": "963665"},
-#         "3P_235": {"folder": "Jim", "locator_id": "976426"},
-#         "3P_1483": {"folder": "Clifford", "locator_id": "969789"},
-#         "3P_260": {"folder": "Kathy", "locator_id": "963666"},
-#         "3P_282": {"folder": "Laurie", "locator_id": "924766"}
-#     }
-
-#     current_agent_id = config['agent_id']
-#     agent_info = agent_details_map.get(current_agent_id)
-
-#     if not agent_info:
-#         raise Exception(f"Agent ID '{current_agent_id}' not found in mapping")
-
-#     calls_to_process = data_manager.get_calls(current_agent_id)
-#     if not calls_to_process:
-#         raise Exception(f"No calls configured for agent '{current_agent_id}'")
-
-#     # Use temp directory instead of user-specified output directory
-#     target_dir = os.path.join(config['temp_dir'], agent_info['folder'])
-#     os.makedirs(target_dir, exist_ok=True)
-
-#     update_progress(15, f"Starting automation for {len(calls_to_process)} calls for {agent_info['folder']}")
-
-#     download_counter = 1
-
-#     # Navigate to reports with better error handling
-#     update_progress(18, "Navigating to Call Recording Report...")
-#     try:
-#         # Wait for and click Review button
-#         await page.wait_for_selector("button:has-text('Review')", timeout=30000)
-#         await page.get_by_role("button", name="Review").click()
-
-#         # Wait for Agent Reports to appear and click it
-#         await page.wait_for_selector("text=Agent Reports", timeout=15000)
-#         await page.get_by_text("Agent Reports").click()
-
-#         # Wait for Call Recording Report to appear
-#         update_progress(19, "Waiting for Call Recording Report...")
-#         await page.wait_for_selector("div.MuiTreeItem-label:has-text('Call Recording Report')", timeout=60000)
-#         await page.locator("div.MuiTreeItem-label").filter(has_text="Call Recording Report").click()
-
-#         # Wait for the report page to fully load
-#         await page.wait_for_load_state("networkidle")
-#         update_progress(20, "Report page loaded successfully")
-
-#     except Exception as nav_error:
-#         raise Exception(f"Navigation failed: {str(nav_error)}. Make sure you're logged into the correct LiveVox portal.")
-
-#     # Set date and agent
-#     update_progress(22, f"Setting up search for agent {current_agent_id}")
-#     await page.locator("#search-panel__start-date").fill(config['start_date'])
-
-#     # Click agent dropdown
-#     await page.get_by_role("row", name="Agent Select One ... Result").locator("u").click()
-#     await page.get_by_placeholder("Search...").fill(current_agent_id)
-
-#     # Select the specific agent
-#     agent_selector = f'[id="\\33 {agent_info["locator_id"]}"]'
-#     try:
-#         await page.wait_for_selector(agent_selector, timeout=10000)
-#         await page.locator(agent_selector).click()
-#         await page.locator("#agent-combo__ok-btn").click()
-#         update_progress(24, f"Agent {current_agent_id} selected successfully")
-#     except Exception as e:
-#         raise Exception(f"Could not find agent {current_agent_id} (locator: {agent_info['locator_id']}). Check agent mapping.")
-
-#     # Process each call
-#     for i, call_data in enumerate(calls_to_process):
-#         progress = 25 + int(((i + 1) / len(calls_to_process)) * 65)
-#         update_progress(progress, f"Searching call {i+1}/{len(calls_to_process)}: {call_data['phone']} (duration: {call_data['duration']}s)")
-
-#         await page.locator("#search-panel__phone-dialed").clear()
-#         await page.locator("#search-panel__phone-dialed").fill(call_data['phone'])
-#         await page.get_by_role("button", name="Generate Report").click()
-
-#         try:
-#             results_table_body = page.locator("div.rt-tbody")
-#             first_row = results_table_body.locator("div.rt-tr:not(.-padRow)").first
-#             await first_row.wait_for(state="visible", timeout=15000)
-
-#             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
-#             update_progress(progress, f"Found {len(data_rows)} recordings for {call_data['phone']}, checking durations...")
-
-#             found_match = False
-#             for j, row in enumerate(data_rows):
-#                 duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
-#                 if duration_in_row == call_data['duration']:
-#                     update_progress(progress, f"Found matching duration {duration_in_row}s, downloading...")
-#                     download_button = row.locator("div.icon--audio-download.clickable")
-#                     async with page.expect_download() as download_info:
-#                         await download_button.click()
-
-#                     download = await download_info.value
-#                     base_filename = download.suggested_filename
-#                     name, ext = os.path.splitext(base_filename)
-
-#                     final_filename = f"{name}-{download_counter}{ext}"
-#                     target_path = os.path.join(target_dir, final_filename)
-
-#                     update_progress(progress, f"Saved: {final_filename}")
-#                     shutil.move(await download.path(), target_path)
-
-#                     download_counter += 1
-#                     found_match = True
-#                     break
-
-#             if not found_match:
-#                 update_progress(progress, f"No matching duration found for {call_data['phone']} (needed: {call_data['duration']}s)")
-
-#         except Exception as e:
-#             update_progress(progress, f"No results found for {call_data['phone']}: {str(e)[:50]}")
-
-#     update_progress(90, f"Completed processing {len(calls_to_process)} calls. Downloaded {download_counter-1} files.")
-
-# async def run_all_calls_logic(page, config, update_progress):
-#     """Implementation for All Calls automation logic"""
-#     agent_details_map = {
-#         "3P_95": {"folder": "Chuck", "locator_id": "963665"},
-#         "3P_235": {"folder": "Jim", "locator_id": "976426"},
-#         "3P_1483": {"folder": "Clifford", "locator_id": "969789"},
-#         "3P_260": {"folder": "Kathy", "locator_id": "963666"},
-#         "3P_282": {"folder": "Laurie", "locator_id": "924766"}
-#     }
-
-#     current_agent_id = config['agent_id']
-#     agent_info = agent_details_map.get(current_agent_id)
-
-#     if not agent_info:
-#         raise Exception(f"Agent ID '{current_agent_id}' not found in mapping")
-
-#     phone_numbers = config['phone_numbers'].split(',')
-#     phone_numbers = [phone.strip() for phone in phone_numbers if phone.strip()]
-
-#     if not phone_numbers:
-#         raise Exception("No valid phone numbers provided")
-
-#     # Use temp directory instead of user-specified output directory
-#     target_dir = os.path.join(config['temp_dir'], agent_info['folder'])
-#     os.makedirs(target_dir, exist_ok=True)
-
-#     update_progress(15, f"Processing {len(phone_numbers)} phone numbers for {agent_info['folder']}")
-
-#     download_counter = 1
-
-#     # Navigate to reports with better error handling
-#     update_progress(18, "Navigating to Call Recording Report...")
-#     try:
-#         # Wait for and click Review button
-#         await page.wait_for_selector("button:has-text('Review')", timeout=30000)
-#         await page.get_by_role("button", name="Review").click()
-
-#         # Wait for Agent Reports to appear and click it
-#         await page.wait_for_selector("text=Agent Reports", timeout=15000)
-#         await page.get_by_text("Agent Reports").click()
-
-#         # Wait for Call Recording Report to appear
-#         update_progress(19, "Waiting for Call Recording Report...")
-#         await page.wait_for_selector("div.MuiTreeItem-label:has-text('Call Recording Report')", timeout=60000)
-#         await page.locator("div.MuiTreeItem-label").filter(has_text="Call Recording Report").click()
-
-#         # Wait for the report page to fully load
-#         await page.wait_for_load_state("networkidle")
-#         update_progress(20, "Report page loaded successfully")
-
-#     except Exception as nav_error:
-#         raise Exception(f"Navigation failed: {str(nav_error)}. Make sure you're logged into the correct LiveVox portal.")
-
-#     # Set date and agent
-#     update_progress(22, f"Setting up search for agent {current_agent_id}")
-#     await page.locator("#search-panel__start-date").fill(config['start_date'])
-
-#     # Click agent dropdown
-#     await page.get_by_role("row", name="Agent Select One ... Result").locator("u").click()
-#     await page.get_by_placeholder("Search...").fill(current_agent_id)
-
-#     # Select the specific agent
-#     agent_selector = f'[id="\\33 {agent_info["locator_id"]}"]'
-#     try:
-#         await page.wait_for_selector(agent_selector, timeout=10000)
-#         await page.locator(agent_selector).click()
-#         await page.locator("#agent-combo__ok-btn").click()
-#         update_progress(24, f"Agent {current_agent_id} selected successfully")
-#     except Exception as e:
-#         raise Exception(f"Could not find agent {current_agent_id} (locator: {agent_info['locator_id']}). Check agent mapping.")
-
-#     # Process each phone number
-#     for i, phone in enumerate(phone_numbers):
-#         progress = 25 + int(((i + 1) / len(phone_numbers)) * 65)
-#         update_progress(progress, f"Processing phone {i+1}/{len(phone_numbers)}: {phone}")
-
-#         await page.locator("#search-panel__phone-dialed").clear()
-#         await page.locator("#search-panel__phone-dialed").fill(phone)
-#         await page.get_by_role("button", name="Generate Report").click()
-
-#         try:
-#             results_table_body = page.locator("div.rt-tbody")
-#             first_row = results_table_body.locator("div.rt-tr:not(.-padRow)").first
-#             await first_row.wait_for(state="visible", timeout=15000)
-
-#             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
-
-#             update_progress(progress, f"Found {len(data_rows)} recording(s) for phone {phone}. Downloading all...")
-
-#             for row in data_rows:
-#                 download_button = row.locator("div.icon--audio-download.clickable")
-#                 async with page.expect_download() as download_info:
-#                     await download_button.click()
-
-#                 download = await download_info.value
-#                 base_filename = download.suggested_filename
-#                 name, ext = os.path.splitext(base_filename)
-
-#                 final_filename = f"{name}-{download_counter}{ext}"
-#                 target_path = os.path.join(target_dir, final_filename)
-
-#                 update_progress(progress, f"Saving file: {final_filename}")
-#                 shutil.move(await download.path(), target_path)
-
-#                 download_counter += 1
-
-#         except Exception as e:
-#             update_progress(progress, f"No recordings found for phone: {phone}")
-
-#     update_progress(90, f"Completed processing {len(phone_numbers)} phone numbers. Downloaded {download_counter-1} files.")
-
-# if __name__ == "__main__":
-#     # Create templates directory if it doesn't exist
-#     os.makedirs("templates", exist_ok=True)
-#     uvicorn.run(app, host="0.0.0.0", port=8001)
-
-
-from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 import uvicorn
 import os
 import json
@@ -855,6 +13,7 @@ import time
 from playwright.async_api import async_playwright
 import shutil
 import uuid
+import requests
 import tempfile
 import zipfile
 import logging
@@ -1396,7 +555,7 @@ async def start_automation_fixed(
             'temp_dir': temp_dir,
             'zip_file': None,
             'agent_id': agent_id,
-            'log_messages': ['Automation terminal ready...']
+'log_messages': [f"[{datetime.now().strftime('%H:%M:%S')}] Automation terminal ready... (Running 0m)"]
         }
 
         print(f"Task {task_id} started successfully")
@@ -1453,7 +612,7 @@ async def start_hci_automation(
             'temp_dir': temp_dir,
             'zip_file': None,
             'project_type': 'hci',
-            'log_messages': ['Automation terminal ready...']
+'log_messages': [f"[{datetime.now().strftime('%H:%M:%S')}] Automation terminal ready... (Running 0m)"]
         }
 
         print(f"HCI Task {task_id} started successfully")
@@ -2461,7 +1620,7 @@ async def start_phrases_automation(
             'message': 'Starting phrases automation...',
             'temp_dir': temp_dir,
             'project_type': 'phrases',
-            'log_messages': ['Automation terminal ready...']
+'log_messages': [f"[{datetime.now().strftime('%H:%M:%S')}] Automation terminal ready... (Running 0m)"]
         }
 
         return {"task_id": task_id, "status": "started"}
@@ -2565,6 +1724,44 @@ async def stop_automation(task_id: str):
         print(f"Error stopping task {task_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error stopping automation: {str(e)}")
 
+@app.post("/api/automation/reset")
+async def reset_all_automation():
+    """Reset all automation states and clear active tasks"""
+    try:
+        # Cancel all running tasks
+        tasks_to_cancel = []
+        for task_id, task_info in active_tasks.items():
+            if 'task' in task_info and not task_info['task'].done():
+                task_info['task'].cancel()
+                tasks_to_cancel.append(task_info['task'])
+        
+        # Wait for all tasks to be cancelled
+        if tasks_to_cancel:
+            try:
+                await asyncio.wait_for(asyncio.gather(*tasks_to_cancel, return_exceptions=True), timeout=10.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                pass  # Expected when cancelling
+        
+        # Clean up temp directories
+        for task_id, task_info in active_tasks.items():
+            if 'temp_dir' in task_info and task_info['temp_dir'] and os.path.exists(task_info['temp_dir']):
+                try:
+                    import shutil
+                    shutil.rmtree(task_info['temp_dir'])
+                    print(f"Cleaned up temp directory: {task_info['temp_dir']}")
+                except Exception as e:
+                    print(f"Error cleaning temp dir {task_info['temp_dir']}: {e}")
+        
+        # Clear all active tasks
+        active_tasks.clear()
+        print("All automation states reset successfully")
+        
+        return {"success": True, "message": "All automation states reset successfully"}
+        
+    except Exception as e:
+        print(f"Error resetting automation states: {e}")
+        raise HTTPException(status_code=500, detail=f"Error resetting automation: {str(e)}")
+
 # HCI Automation Functions
 async def run_hci_automation(task_id: str, config: Dict[str, Any]):
     """Run HCI Summary Report automation using Playwright"""
@@ -2579,8 +1776,10 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
                 active_tasks[task_id]['progress'] = progress
                 active_tasks[task_id]['message'] = f"{message} (Running {elapsed}m)"
 
-                # Clean message without emoji prefix (like HCI)
-                log_message = message
+                # Create timestamped log message
+                import datetime
+                timestamp = datetime.datetime.now().strftime('%H:%M:%S')
+                log_message = f"[{timestamp}] {message} (Running {elapsed}m)"
 
                 active_tasks[task_id]['log_messages'].append(log_message)
 
@@ -2595,7 +1794,7 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
 
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch(
-                headless=True,
+                headless=False,
                 args=['--no-sandbox', '--disable-dev-shm-usage']
             )
 
@@ -3049,8 +2248,10 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                 active_tasks[task_id]['progress'] = progress
                 active_tasks[task_id]['message'] = f"{message} (Running {elapsed}m)"
 
-                # Clean message without emoji prefix (like HCI)
-                log_message = message
+                # Create timestamped log message
+                import datetime
+                timestamp = datetime.datetime.now().strftime('%H:%M:%S')
+                log_message = f"[{timestamp}] {message} (Running {elapsed}m)"
 
                 active_tasks[task_id]['log_messages'].append(log_message)
 
@@ -3090,7 +2291,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
             if config['operation_type'] == 'convert_files':
                 # Use chromium for file conversion
                 browser = await playwright.chromium.launch(
-                    headless=False,
+                    headless=True,
                     args=['--no-sandbox', '--disable-dev-shm-usage']
                 )
             else:
@@ -3402,6 +2603,14 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                         print("DEBUG: UPLOAD_SOUND OPERATION STARTED")
                         print(f"DEBUG: Config operation_type = {config['operation_type']}")
                         print(f"DEBUG: Number of phrases = {len(config['phrases_data'])}")
+
+                        # DEBUG: Print all phrase names to see what we have
+                        for i, phrase_data in enumerate(config['phrases_data']):
+                            phrase_name = phrase_data['phrase_name']
+                            wav_org_file = phrase_data.get('wav_org_file')
+                            has_audio = wav_org_file and wav_org_file.get('filename')
+                            print(f"DEBUG: Phrase {i}: {phrase_name}, has_audio: {has_audio}")
+                        print("DEBUG: Starting adding phase...")
                         # FIRST: Add phrases (EXACTLY like the working TTS code does)
                         update_progress(10, "Adding phrases first...")
                         voices = ['Bob', 'Julie', 'Juanita']
@@ -3413,10 +2622,6 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                 verbiage = phrase_data['verbiage']
                                 description = phrase_data.get('description', '')
                                 wav_org_file = phrase_data.get('wav_org_file')
-
-                                # Skip if no audio file
-                                if not wav_org_file or not wav_org_file.get('filename'):
-                                    continue
 
                                 progress = 10 + (i * 30 // total_phrases)  # 10% to 40%
                                 update_progress(progress, f"Adding phrase: {phrase_name}")
@@ -3553,7 +2758,18 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                                                 # Click the "Upload" button
                                                 await page.locator("#upload-phrase-dialog__upload-btn").click()
-                                                update_progress(progress, f"Upload Button Clicked")
+
+                                                try:
+                                                    # Wait for alert and click Yes if it appears
+                                                    await page.locator('div.lv-alert__content').wait_for(state="visible", timeout=10000)
+                                                    update_progress(progress, f"Voice ID overwrite confirmation detected")
+                                                    await page.locator('text=Yes').click()
+                                                    update_progress(progress, f"Confirmation accepted")
+                                                    update_progress(progress, f"Upload Button Clicked")
+                                                except:
+                                                    # Alert didn't appear - continue normally
+                                                    update_progress(progress, f"Upload Button Clicked")
+
                                                 await asyncio.sleep(3)
 
                                             except Exception as e:
@@ -3629,8 +2845,10 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
                 active_tasks[task_id]['progress'] = progress
                 active_tasks[task_id]['message'] = f"{message} (Running {elapsed}m)"
 
-                # Clean message without emoji prefix (like HCI)
-                log_message = message
+                # Create timestamped log message
+                import datetime
+                timestamp = datetime.datetime.now().strftime('%H:%M:%S')
+                log_message = f"[{timestamp}] {message} (Running {elapsed}m)"
 
                 active_tasks[task_id]['log_messages'].append(log_message)
 
@@ -3700,7 +2918,9 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
                 if asyncio.current_task().cancelled():
                     raise asyncio.CancelledError("Task was cancelled")
 
+                print(f"DEBUG: Sending 95% message - Creating ZIP file")
                 update_progress(95, "Creating ZIP file...")
+                await asyncio.sleep(1.5)  # Give time to see the message
                 zip_file_path = await create_zip_file(task_id, config['temp_dir'], config['agent_id'])
 
                 if task_id in active_tasks:
@@ -3708,8 +2928,10 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
                     active_tasks[task_id]['agent_id'] = config['agent_id']
 
                 elapsed = int((time.time() - start_time) / 60)
+                print(f"DEBUG: Sending 100% message - Automation completed")
                 update_progress(100, f"Automation completed successfully in {elapsed}m! ZIP file ready for download.")
                 active_tasks[task_id]['status'] = 'completed'
+                print(f"DEBUG: Set status to completed")
 
             except asyncio.CancelledError:
                 print(f"LiveVox Task {task_id} was cancelled, cleaning up...")
@@ -3825,7 +3047,12 @@ async def run_specific_calls_logic(page, config, update_progress):
 
         await page.locator("#search-panel__phone-dialed").clear()
         await page.locator("#search-panel__phone-dialed").fill(call_data['phone'])
-        await page.get_by_role("button", name="Generate Report").click()
+
+        # Wait for Generate Report button to be enabled
+        generate_button = page.get_by_role("button", name="Generate Report")
+        await generate_button.wait_for(state="attached", timeout=10000)
+        await page.wait_for_function("document.querySelector('#search-panel__generate-report-btn').disabled === false", timeout=30000)
+        await generate_button.click()
 
         try:
             results_table_body = page.locator("div.rt-tbody")
@@ -3833,18 +3060,39 @@ async def run_specific_calls_logic(page, config, update_progress):
             await first_row.wait_for(state="visible", timeout=15000)
 
             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
-            update_progress(progress, f"Found {len(data_rows)} recordings")
-            await asyncio.sleep(0.5)  # Give time to see the found message
+        except Exception as e:
+            data_rows = []
 
-            found_match = False
-            downloading_shown = False
-            for j, row in enumerate(data_rows):
+        # Always show the count message for every call with duration
+        matching_recordings = 0
+        if data_rows:
+            for check_row in data_rows:
+                try:
+                    check_duration = await check_row.locator("div.rt-td").nth(8).inner_text()
+                    if check_duration == call_data['duration']:
+                        matching_recordings += 1
+                except:
+                    continue
+
+        # ALWAYS show this message for EVERY call - SPECIFIC CALLS
+        if matching_recordings == 1:
+            update_progress(progress, f"Found recording with duration {call_data['duration']}")
+        elif matching_recordings > 1:
+            update_progress(progress, f"Found {matching_recordings} recordings with duration {call_data['duration']}")
+        else:
+            update_progress(progress, f"No recordings found with duration {call_data['duration']}")
+
+        await asyncio.sleep(1.0)  # Longer delay to ensure message is visible
+
+        found_match = False
+        if matching_recordings > 0:
+            update_progress(progress, f"Downloading recording")
+            await asyncio.sleep(1.0)  # Longer delay
+
+        for j, row in enumerate(data_rows):
+            try:
                 duration_in_row = await row.locator("div.rt-td").nth(8).inner_text()
                 if duration_in_row == call_data['duration']:
-                    if not downloading_shown:
-                        update_progress(progress, f"Downloading recordings")
-                        downloading_shown = True
-                        await asyncio.sleep(1.0)  # Much longer delay so message isn't overwritten
 
                     download_button = row.locator("div.icon--audio-download.clickable")
                     async with page.expect_download() as download_info:
@@ -3863,19 +3111,19 @@ async def run_specific_calls_logic(page, config, update_progress):
                     download_counter += 1
                     found_match = True
                     break
-
-            if not found_match:
-                update_progress(progress, f"No matching duration found for {call_data['phone']} (needed: {call_data['duration']}s)")
-
-        except Exception as e:
-            update_progress(progress, f"No results found for {call_data['phone']}: {str(e)[:50]}")
+            except Exception as download_error:
+                continue
 
     # Show all saved files at the end
+    print(f"DEBUG: Specific calls function reached completion section with {len(saved_files)} files")
     if saved_files:
         files_list = ", ".join(saved_files)
         update_progress(88, f"Saved {len(saved_files)} files: {files_list}")
+        await asyncio.sleep(1.5)  # Give time to see the message
 
     update_progress(90, f"Completed processing {len(calls_to_process)} calls. Downloaded {download_counter-1} files.")
+    await asyncio.sleep(1.5)  # Give time to see the message
+    print(f"DEBUG: Specific calls function completed successfully")
 
 async def run_all_calls_logic(page, config, update_progress):
     """Implementation for All Calls automation logic"""
@@ -3946,7 +3194,12 @@ async def run_all_calls_logic(page, config, update_progress):
 
         await page.locator("#search-panel__phone-dialed").clear()
         await page.locator("#search-panel__phone-dialed").fill(phone)
-        await page.get_by_role("button", name="Generate Report").click()
+
+        # Wait for Generate Report button to be enabled
+        generate_button = page.get_by_role("button", name="Generate Report")
+        await generate_button.wait_for(state="attached", timeout=10000)
+        await page.wait_for_function("document.querySelector('#search-panel__generate-report-btn').disabled === false", timeout=30000)
+        await generate_button.click()
 
         try:
             results_table_body = page.locator("div.rt-tbody")
@@ -3954,18 +3207,19 @@ async def run_all_calls_logic(page, config, update_progress):
             await first_row.wait_for(state="visible", timeout=15000)
 
             data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
+        except Exception as e:
+            data_rows = []
 
-            update_progress(progress, f"Found {len(data_rows)} recordings")
-            await asyncio.sleep(0.5)  # Give time to see the count message
+        # Always show the count message for every call - ALL CALLS
+        update_progress(progress, f"Found {len(data_rows)} recordings")
+        await asyncio.sleep(1.0)  # Longer delay to ensure message is visible
 
-            downloading_shown = False
+        if data_rows:
+            update_progress(progress, f"Downloading recordings")
+            await asyncio.sleep(1.0)  # Longer delay to ensure message is visible
+
             for j, row in enumerate(data_rows):
                 try:
-                    if not downloading_shown:
-                        update_progress(progress, f"Downloading recordings")
-                        downloading_shown = True
-                        await asyncio.sleep(0.5)  # Longer delay to ensure message is visible
-
                     download_button = row.locator("div.icon--audio-download.clickable")
                     async with page.expect_download() as download_info:
                         await download_button.click()
@@ -3989,15 +3243,16 @@ async def run_all_calls_logic(page, config, update_progress):
                         print(f"Progress message error: {msg_error}")
                     continue
 
-        except Exception as e:
-            update_progress(progress, f"No recordings found for phone: {phone}")
-
     # Show all saved files at the end
+    print(f"DEBUG: All calls function reached completion section with {len(saved_files)} files")
     if saved_files:
         files_list = ", ".join(saved_files)
         update_progress(88, f"Saved {len(saved_files)} files: {files_list}")
+        await asyncio.sleep(1.5)  # Give time to see the message
 
     update_progress(90, f"Completed processing {len(phone_numbers)} phone numbers. Downloaded {download_counter-1} files.")
+    await asyncio.sleep(1.5)  # Give time to see the message
+    print(f"DEBUG: All calls function completed successfully")
 
 # User management system
 class UserManager:

@@ -599,7 +599,9 @@
                         logEntry.textContent = logMessage;
                         logContent.appendChild(logEntry);
                     });
-                    logContent.scrollTop = logContent.scrollHeight;
+                    // Auto-scroll to bottom
+                const logContainer = document.getElementById('logContainer');
+                logContainer.scrollTop = logContainer.scrollHeight;
                 }
                 
                 // Resume polling and animation if task is still running
@@ -965,6 +967,12 @@
                             clearInterval(progressInterval);
                             targetProgressValue = 100.0;
                             
+                            // Hide stop button immediately
+                            const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                            if (stopBtn) {
+                                stopBtn.style.display = 'none';
+                            }
+                            
                             // Save completed state
                             const projectName = 'hci_summary';
                             const logContent = document.getElementById('logContent');
@@ -1003,11 +1011,13 @@
                                 }, 3000);
                             }
                             
-                            // Hide stop button since automation is done
-                            const stopBtn = document.querySelector('.btn-danger');
-                            if (stopBtn && stopBtn.textContent.includes('Stop')) {
-                                stopBtn.style.display = 'none';
-                            }
+                            // Hide stop button since automation is done  
+                            setTimeout(() => {
+                                const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                                if (stopBtn) {
+                                    stopBtn.style.display = 'none';
+                                }
+                            }, 500);
                             
                         } else if (status.status === 'failed') {
                             clearInterval(progressInterval);
@@ -1067,7 +1077,9 @@
                     logContent.removeChild(logContent.firstChild);
                 }
                 
-                logContent.scrollTop = logContent.scrollHeight;
+                // Auto-scroll to bottom
+                const logContainer = document.getElementById('logContainer');
+                logContainer.scrollTop = logContainer.scrollHeight;
                 lastLogMessage = message;
             }
 
@@ -1133,8 +1145,8 @@
                 }, 2000);
                 
                 // Hide the stop button
-                const stopBtn = document.querySelector('.btn-danger');
-                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                if (stopBtn) {
                     stopBtn.style.display = 'none';
                 }
             }

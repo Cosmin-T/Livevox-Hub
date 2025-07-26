@@ -610,6 +610,11 @@
                             <div id="convertedFilesContent" class="file-list-container">
                                 <p style="color: #666666;">No audio files available. Upload files above to convert them.</p>
                             </div>
+                            <div style="margin-top: 15px; text-align: center;">
+                                <button class="btn btn-danger" onclick="deleteAllFiles()" id="deleteAllFilesBtn" style="display: none;">
+                                    Delete All Files
+                                </button>
+                            </div>
                         </div>
                         <div class="audio-player-panel">
                             <h4 style="margin-bottom: 10px; font-size: 16px;">Audio Player</h4>
@@ -686,6 +691,12 @@
                             <!-- Existing phrases will be added below -->
                         </tbody>
                     </table>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="btn btn-danger" onclick="deleteAllPhrases()" id="deleteAllPhrasesBtn" style="display: none;">
+                        Delete All Phrases
+                    </button>
                 </div>
             </div>
 
@@ -1234,6 +1245,12 @@
                         targetProgressValue = 100.0;
                         updateProgress(100, "Automation completed successfully!");
 
+                        // Hide stop button immediately
+                        const stopBtn = document.getElementById('stopBtn');
+                        if (stopBtn) {
+                            stopBtn.style.display = 'none';
+                        }
+
                         // Save completed state
                         const projectName = 'add_phrases';
                         const logContent = document.getElementById('logContent');
@@ -1304,10 +1321,8 @@
             targetProgressValue = parseFloat(progress);
 
             if (message) {
-                // Format message like HCI: timestamp + message + running time
-                const timestamp = new Date().toLocaleTimeString();
-                const runningTime = getRunningTime();
-                addLogMessage(`[${timestamp}] ${message} (Running ${runningTime})`);
+                // Use message as-is since it now includes timestamp from backend
+                addLogMessage(message);
             }
 
             // Save progress state to localStorage
@@ -1334,17 +1349,10 @@
             // Clear existing content and add new messages with timestamps and running time
             logContent.innerHTML = '';
 
-            // Add initial message without timestamp
-            const initialLog = document.createElement('div');
-            initialLog.textContent = 'Starting automation...';
-            logContent.appendChild(initialLog);
-
-            // Add backend messages with timestamp and running time
+            // Add backend messages (already include timestamp and running time)
             messages.forEach(msg => {
-                const timestamp = new Date().toLocaleTimeString();
-                const runningTime = getRunningTime();
                 const div = document.createElement('div');
-                div.textContent = `[${timestamp}] ${msg} (Running ${runningTime})`;
+                div.textContent = msg;
                 logContent.appendChild(div);
             });
 
@@ -1575,11 +1583,24 @@
                     });
                     contentDiv.innerHTML = filesHTML;
 
+                    // Show delete all button when files are present
+                    const deleteAllBtn = document.getElementById('deleteAllFilesBtn');
+                    if (deleteAllBtn) {
+                        deleteAllBtn.style.display = 'inline-block';
+                    }
+
                     // Update the dropdown in the phrase table
                     updateWavFileDropdown(result.files);
                 } else {
                     console.log('No files found or error:', result);
                     contentDiv.innerHTML = '<p style="color: #666666;">No converted files available. Upload files above to convert them.</p>';
+                    
+                    // Hide delete all button when no files
+                    const deleteAllBtn = document.getElementById('deleteAllFilesBtn');
+                    if (deleteAllBtn) {
+                        deleteAllBtn.style.display = 'none';
+                    }
+                    
                     updateWavFileDropdown([]);
                 }
             } catch (error) {
@@ -1910,8 +1931,20 @@
 
                     console.log(`Successfully loaded ${result.phrases.length} phrases into table`);
                     updateBatchButtons(); // Update button states
+                    
+                    // Show delete all phrases button when phrases are present
+                    const deleteAllPhrasesBtn = document.getElementById('deleteAllPhrasesBtn');
+                    if (deleteAllPhrasesBtn) {
+                        deleteAllPhrasesBtn.style.display = 'inline-block';
+                    }
                 } else {
                     console.log('No saved phrases found');
+                    
+                    // Hide delete all phrases button when no phrases
+                    const deleteAllPhrasesBtn = document.getElementById('deleteAllPhrasesBtn');
+                    if (deleteAllPhrasesBtn) {
+                        deleteAllPhrasesBtn.style.display = 'none';
+                    }
                 }
             } catch (error) {
                 console.error('Error loading saved phrases:', error);
@@ -2216,6 +2249,140 @@
                 console.error('Error deleting converted file:', error);
                 showAudioAlert(`Error deleting file: ${error.message}`, 'error');
             }
+        }
+
+        // Delete all files with confirmation
+        async function deleteAllFiles() {
+            console.log('Attempting to delete all files');
+            
+            // Get all current files
+            const fileItems = document.querySelectorAll('#convertedFilesContent .file-list-item');
+            if (fileItems.length === 0) {
+                showAudioAlert('No files to delete.', 'info');
+                return;
+            }
+            
+            // Show confirmation dialog
+            const confirmMessage = `Are you sure you want to delete ALL ${fileItems.length} audio files?\n\nThis action cannot be undone. All files will be removed from phrases that use them.`;
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            let deletedCount = 0;
+            let failedCount = 0;
+            const allAffectedPhrases = new Set();
+            
+            // Delete each file
+            for (const fileItem of fileItems) {
+                const filename = fileItem.getAttribute('data-filename');
+                if (!filename) continue;
+                
+                try {
+                    console.log(`Deleting file: ${filename}`);
+                    const response = await fetch(`/api/phrases/converted-files/${encodeURIComponent(filename)}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        deletedCount++;
+                        if (result.affected_phrases) {
+                            result.affected_phrases.forEach(phrase => allAffectedPhrases.add(phrase));
+                        }
+                        console.log(`Successfully deleted file: ${filename}`);
+                    } else {
+                        failedCount++;
+                        console.error(`Error deleting file ${filename}:`, result.detail);
+                    }
+                } catch (error) {
+                    failedCount++;
+                    console.error(`Error deleting file ${filename}:`, error);
+                }
+            }
+            
+            // Show results
+            let message = `Deleted ${deletedCount} files`;
+            if (failedCount > 0) {
+                message += `, ${failedCount} failed`;
+            }
+            if (allAffectedPhrases.size > 0) {
+                message += `\nAffected phrases: ${Array.from(allAffectedPhrases).join(', ')}`;
+            }
+            
+            showAudioAlert(message, deletedCount > 0 ? 'success' : 'error');
+            
+            // Reset audio player
+            resetSimpleAudioPlayer();
+            
+            // Refresh the converted files list
+            await loadConvertedFiles();
+            
+            // Refresh the phrase table if phrases were affected
+            if (allAffectedPhrases.size > 0) {
+                await loadSavedPhrasesIntoTable();
+            }
+            
+            console.log(`Delete all files completed: ${deletedCount} deleted, ${failedCount} failed`);
+        }
+
+        // Delete all phrases with confirmation
+        async function deleteAllPhrases() {
+            console.log('Attempting to delete all phrases');
+            
+            // Get all current phrases (excluding the add row)
+            const phraseRows = document.querySelectorAll('#phraseTableBody tr:not(#addPhraseRow)');
+            if (phraseRows.length === 0) {
+                showOperationAlert('No phrases to delete.', 'info');
+                return;
+            }
+            
+            // Show confirmation dialog
+            const confirmMessage = `Are you sure you want to delete ALL ${phraseRows.length} phrases?\n\nThis action cannot be undone.`;
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            let deletedCount = 0;
+            let failedCount = 0;
+            
+            // Delete each phrase
+            for (const row of phraseRows) {
+                const phraseId = row.getAttribute('data-phrase-id');
+                if (!phraseId) continue;
+                
+                try {
+                    console.log(`Deleting phrase: ${phraseId}`);
+                    const response = await fetch(`/api/phrases/${phraseId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        deletedCount++;
+                        console.log(`Successfully deleted phrase: ${phraseId}`);
+                    } else {
+                        const result = await response.json();
+                        failedCount++;
+                        console.error(`Error deleting phrase ${phraseId}:`, result.detail);
+                    }
+                } catch (error) {
+                    failedCount++;
+                    console.error(`Error deleting phrase ${phraseId}:`, error);
+                }
+            }
+            
+            // Show results
+            let message = `Deleted ${deletedCount} phrases`;
+            if (failedCount > 0) {
+                message += `, ${failedCount} failed`;
+            }
+            
+            showOperationAlert(message, deletedCount > 0 ? 'success' : 'error');
+            
+            // Refresh the phrase table
+            await loadSavedPhrasesIntoTable();
+            
+            console.log(`Delete all phrases completed: ${deletedCount} deleted, ${failedCount} failed`);
         }
     </script>
 </body>

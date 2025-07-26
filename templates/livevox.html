@@ -814,7 +814,9 @@
                         logEntry.textContent = logMessage;
                         logContent.appendChild(logEntry);
                     });
-                    logContent.scrollTop = logContent.scrollHeight;
+                    // Auto-scroll to bottom
+                const logContainer = document.getElementById('logContainer');
+                logContainer.scrollTop = logContainer.scrollHeight;
                 }
 
                 // Resume polling and animation if task is still running
@@ -1421,6 +1423,12 @@
 
                         if (status.status === 'completed') {
                             clearInterval(progressInterval);
+                            
+                            // Hide stop button immediately - target the specific Stop Automation button
+                            const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                            if (stopBtn) {
+                                stopBtn.style.display = 'none';
+                            }
 
                             // STOP THE SMOOTH ANIMATION ON COMPLETION
                             if (animationTimer) {
@@ -1465,11 +1473,11 @@
                                 }, 3000);
 
                                 // Hide stop button since automation is done
-                                const stopBtn = document.querySelector('.btn-danger');
-                                if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                                const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                                if (stopBtn) {
                                     stopBtn.style.display = 'none';
                                 }
-                            }, 1000);
+                            }, 500);
 
                         } else if (status.status === 'failed') {
                             clearInterval(progressInterval);
@@ -1512,8 +1520,8 @@
                             }, 5000);
 
                             // Hide stop button since automation is done
-                            const stopBtn = document.querySelector('.btn-danger');
-                            if (stopBtn && stopBtn.textContent.includes('Stop')) {
+                            const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
+                            if (stopBtn) {
                                 stopBtn.style.display = 'none';
                             }
                         }
@@ -1544,7 +1552,9 @@
                     logContent.removeChild(logContent.firstChild);
                 }
 
-                logContent.scrollTop = logContent.scrollHeight;
+                // Auto-scroll to bottom
+                const logContainer = document.getElementById('logContainer');
+                logContainer.scrollTop = logContainer.scrollHeight;
                 lastLogMessage = message;
             }
 
