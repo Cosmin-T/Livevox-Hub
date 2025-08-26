@@ -28,13 +28,13 @@
   "cturculeanu": {
     "password": "Holocaust00@@",
     "portal": "https://portal.na6.livevox.com/BII_1",
-    "ip_address": "86.120.52.73",
+    "ip_address": "86.126.179.21",
     "location": {
       "city": "Craiova",
       "region": "Dolj",
       "country": "Romania",
       "country_code": "RO",
-      "postal_code": "200676",
+      "postal_code": "200812",
       "latitude": 44.318,
       "longitude": 23.7967,
       "timezone": "Europe/Bucharest",
@@ -48,8 +48,8 @@
       "security_level": "Safe",
       "maps_url": "https://www.google.com/maps?q=44.318,23.7967"
     },
-    "created_at": "2025-07-28T14:08:12.799880",
-    "last_login": "2025-07-28T14:08:12.799887"
+    "created_at": "2025-08-26T15:25:41.238726",
+    "last_login": "2025-08-26T15:25:41.238740"
   },
   "Team": {
     "password": "team",
