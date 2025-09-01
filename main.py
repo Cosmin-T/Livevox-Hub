@@ -510,12 +510,13 @@ async def delete_all_calls_for_agent(agent_id: str):
 @app.post("/api/automation/start")
 async def start_automation_fixed(
     function_type: str = Form(...),
-    agent_id: str = Form(...),
+    agent_id: Optional[str] = Form(None),
     start_date: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),
     url: str = Form(...),
-    phone_numbers: Optional[str] = Form(None)
+    phone_numbers: Optional[str] = Form(None),
+    account_numbers: Optional[str] = Form(None)
 ):
     """FIXED: No output_dir required anymore - uses temp directories"""
     try:
@@ -528,6 +529,7 @@ async def start_automation_fixed(
         print(f"  username: {username}")
         print(f"  url: {url}")
         print(f"  phone_numbers: {phone_numbers}")
+        print(f"  account_numbers: {account_numbers}")
         print("=" * 50)
 
         task_id = str(uuid.uuid4())
@@ -543,7 +545,8 @@ async def start_automation_fixed(
             'username': username,
             'password': password,
             'url': url,
-            'phone_numbers': phone_numbers
+            'phone_numbers': phone_numbers,
+            'account_numbers': account_numbers
         }
 
         task = asyncio.create_task(run_automation(task_id, config))
@@ -1177,8 +1180,8 @@ async def convert_audio_via_web_service(input_path: str, output_path: str) -> by
 
     try:
         async with async_playwright() as p:
-            # Launch browser in visible mode for debugging
-            browser = await p.chromium.launch(headless=False)
+            # Launch browser in headless mode
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             page = await context.new_page()
             page.set_default_timeout(30000)
@@ -1794,7 +1797,7 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
 
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch(
-                headless=False,
+                headless=True,
                 args=['--no-sandbox', '--disable-dev-shm-usage']
             )
 
@@ -2862,7 +2865,7 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
         update_progress(5, "Starting browser...")
 
         async with async_playwright() as playwright:
-            browser = await playwright.webkit.launch()
+            browser = await playwright.webkit.launch(headless=True)
             context = await browser.new_context(accept_downloads=True)
             page = await context.new_page()
             await page.set_viewport_size({"width": 1440, "height": 1440})
@@ -2913,6 +2916,8 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
                     await run_specific_calls_logic(page, config, update_progress)
                 elif config['function_type'] == 'all_calls':
                     await run_all_calls_logic(page, config, update_progress)
+                elif config['function_type'] == 'account_calls':
+                    await run_account_calls_logic(page, config, update_progress)
 
                 # Check for cancellation before ZIP creation
                 if asyncio.current_task().cancelled():
@@ -2921,7 +2926,14 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
                 print(f"DEBUG: Sending 95% message - Creating ZIP file")
                 update_progress(95, "Creating ZIP file...")
                 await asyncio.sleep(1.5)  # Give time to see the message
-                zip_file_path = await create_zip_file(task_id, config['temp_dir'], config['agent_id'])
+                
+                # Determine the identifier for ZIP file naming
+                if config['function_type'] == 'account_calls':
+                    identifier = "Multiple_Accounts"
+                else:
+                    identifier = config['agent_id']
+                
+                zip_file_path = await create_zip_file(task_id, config['temp_dir'], identifier)
 
                 if task_id in active_tasks:
                     active_tasks[task_id]['zip_file'] = zip_file_path
@@ -3254,6 +3266,154 @@ async def run_all_calls_logic(page, config, update_progress):
     await asyncio.sleep(1.5)  # Give time to see the message
     print(f"DEBUG: All calls function completed successfully")
 
+async def run_account_calls_logic(page, config, update_progress):
+    """Implementation for Account Calls automation logic - multiple accounts sequential processing"""
+    
+    account_numbers = config['account_numbers']
+    if not account_numbers:
+        raise Exception("No account numbers provided")
+
+    # Parse account numbers
+    accounts = [account.strip() for account in account_numbers.split(',') if account.strip()]
+    if not accounts:
+        raise Exception("No valid account numbers provided")
+
+    update_progress(15, f"Processing {len(accounts)} accounts")
+
+    total_download_counter = 1
+    all_saved_files = []
+
+    # Navigate to Call Recording Report once
+    update_progress(18, "Navigating to Call Recording Report...")
+    try:
+        await page.wait_for_selector("button:has-text('Review')", timeout=30000)
+        await page.get_by_role("button", name="Review").click()
+
+        await page.wait_for_selector("text=Agent Reports", timeout=15000)
+        await page.get_by_text("Agent Reports").click()
+
+        update_progress(19, "Waiting for Call Recording Report...")
+        await page.wait_for_selector("div.MuiTreeItem-label:has-text('Call Recording Report')", timeout=60000)
+        await page.locator("div.MuiTreeItem-label").filter(has_text="Call Recording Report").click()
+
+        await page.wait_for_load_state("networkidle")
+        update_progress(20, "Report page loaded successfully")
+
+    except Exception as nav_error:
+        raise Exception(f"Navigation failed: {str(nav_error)}. Make sure you're logged into the correct LiveVox portal.")
+
+    # Set start date once
+    await page.locator("#search-panel__start-date").fill(config['start_date'])
+
+    # Process each account sequentially
+    for account_index, account_number in enumerate(accounts):
+        update_progress(20 + (account_index * 70 // len(accounts)), f"Processing account {account_index + 1}/{len(accounts)}: {account_number}")
+        
+        # Create directory for this account
+        target_dir = os.path.join(config['temp_dir'], f"Account_{account_number}")
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Fill the account search field
+        await page.locator("#search-panel__account").clear()
+        await page.locator("#search-panel__account").fill(account_number)
+
+        # Generate report
+        generate_button = page.get_by_role("button", name="Generate Report")
+        await generate_button.wait_for(state="attached", timeout=10000)
+        await page.wait_for_function("document.querySelector('#search-panel__generate-report-btn').disabled === false", timeout=30000)
+        await generate_button.click()
+
+        try:
+            results_table_body = page.locator("div.rt-tbody")
+            first_row = results_table_body.locator("div.rt-tr:not(.-padRow)").first
+            await first_row.wait_for(state="visible", timeout=15000)
+            data_rows = await results_table_body.locator("div.rt-tr:not(.-padRow)").all()
+        except Exception as e:
+            data_rows = []
+
+        update_progress(25 + (account_index * 70 // len(accounts)), f"Account {account_number}: Found {len(data_rows)} recordings")
+        await asyncio.sleep(1.0)
+
+        account_saved_files = []
+        
+        if data_rows:
+            update_progress(30 + (account_index * 70 // len(accounts)), f"Account {account_number}: Processing {len(data_rows)} recordings")
+            await asyncio.sleep(1.0)
+
+            # Process each recording in this account
+            for j, row in enumerate(data_rows):
+                base_progress = 30 + (account_index * 70 // len(accounts))
+                row_progress = base_progress + ((j + 1) * 30 // len(data_rows))
+                update_progress(row_progress, f"Account {account_number}: Downloading recording {j+1}/{len(data_rows)}")
+                
+                try:
+                    download_button = row.locator("div.icon--audio-download.clickable")
+                    
+                    # Set up download expectation BEFORE clicking
+                    async with page.expect_download(timeout=10000) as download_info:
+                        await download_button.click()
+                        
+                        # Wait briefly to see if "Not available" appears instead of download
+                        try:
+                            await asyncio.sleep(2.0)
+                            
+                            # Check if "Not available" appeared in the download cell
+                            download_cell_content = await row.locator("div.rt-td").last.inner_text()
+                            
+                            if "Not available" in download_cell_content:
+                                update_progress(row_progress, f"Account {account_number}: Recording {j+1} not available for download")
+                                continue
+                        except:
+                            pass
+
+                    # If we get here, we should have a download
+                    download = await download_info.value
+                    base_filename = download.suggested_filename
+                    name, ext = os.path.splitext(base_filename)
+
+                    final_filename = f"{name}-{total_download_counter}{ext}"
+                    target_path = os.path.join(target_dir, final_filename)
+
+                    shutil.move(await download.path(), target_path)
+                    account_saved_files.append(final_filename)
+                    all_saved_files.append(f"{account_number}/{final_filename}")
+
+                    total_download_counter += 1
+                    update_progress(row_progress, f"Account {account_number}: Downloaded recording {j+1} successfully")
+
+                except Exception as download_error:
+                    # Check if it's actually "Not available" after the exception
+                    try:
+                        download_cell_content = await row.locator("div.rt-td").last.inner_text()
+                        if "Not available" in download_cell_content:
+                            update_progress(row_progress, f"Account {account_number}: Recording {j+1} not available for download")
+                        else:
+                            update_progress(row_progress, f"Account {account_number}: Recording {j+1} download failed")
+                    except:
+                        update_progress(row_progress, f"Account {account_number}: Recording {j+1} not available for download")
+                    continue
+
+            # Summary for this account after all recordings processed
+            if account_saved_files:
+                update_progress(60 + (account_index * 70 // len(accounts)), f"Account {account_number}: Downloaded {len(account_saved_files)} files")
+                
+                
+            else:
+                update_progress(60 + (account_index * 70 // len(accounts)), f"Account {account_number}: No files available for download")
+            await asyncio.sleep(1.0)
+        else:
+            update_progress(60 + (account_index * 70 // len(accounts)), f"Account {account_number}: No recordings found")
+            await asyncio.sleep(1.0)
+
+    # Final summary after ALL accounts processed
+    if all_saved_files:
+        update_progress(88, f"Total downloaded across all accounts: {len(all_saved_files)} files")
+        await asyncio.sleep(1.5)
+
+    update_progress(90, f"Completed processing {len(accounts)} accounts. Total downloads: {total_download_counter-1} files.")
+    await asyncio.sleep(1.5)
+    print(f"DEBUG: Account calls function completed successfully")
+
 # User management system
 class UserManager:
     def __init__(self):
@@ -3528,6 +3688,19 @@ async def export_users():
         "logs": logs,
         "exported_at": datetime.now().isoformat()
     }
+
+@app.get("/api/user/{username}")
+async def get_user_info(username: str):
+    users = user_manager.load_users()
+    if username in users:
+        user_data = users[username]
+        return {
+            "username": username,
+            "location": user_data.get("location", {}),
+            "country": user_data.get("location", {}).get("country", ""),
+            "region": user_data.get("location", {}).get("region", "")
+        }
+    return {"error": "User not found"}
 
 @app.post("/api/auth/logout")
 async def logout():

@@ -453,13 +453,13 @@
                         statusDiv.className = 'success';
                         statusDiv.style.display = 'block';
 
-                        // Show/hide admin link INSTANTLY
-                        if (username === 'cturculeanu') {
-                            console.log('Admin user detected, showing admin link...');
+                        // Check admin access based on location
+                        const hasAdminAccess = await checkAdminAccess(username);
+                        if (hasAdminAccess) {
+                            console.log('Admin access granted, showing admin link...');
                             showAdminLink();
                         } else {
-                            // NOT admin user - remove admin link if it exists
-                            console.log('Non-admin user detected, removing admin link...');
+                            console.log('Admin access denied, removing admin link...');
                             hideAdminLink();
                         }
                     } else {
@@ -478,7 +478,7 @@
             }
         }
 
-        function loadCredentials() {
+        async function loadCredentials() {
             const portal = localStorage.getItem('livevox_portal');
             const username = localStorage.getItem('livevox_username');
             const password = localStorage.getItem('livevox_password');
@@ -493,22 +493,26 @@
                 statusDiv.className = 'info';
                 statusDiv.style.display = 'block';
                 
-                // Show admin link if user is admin, hide if not
-                if (username === 'cturculeanu') {
+                // Check admin access based on location
+                const hasAdminAccess = await checkAdminAccess(username);
+                if (hasAdminAccess) {
                     showAdminLink();
                 } else {
                     hideAdminLink();
                 }
             }
             
-            // Check if admin should see admin link immediately - NO DELAYS
+            // Check if admin should see admin link immediately based on location
             const savedUsername = localStorage.getItem('livevox_username');
-            if (savedUsername === 'cturculeanu') {
-                console.log('Admin user found in localStorage, showing admin link INSTANTLY');
-                showAdminLink();
-            } else if (savedUsername) {
-                console.log('Non-admin user found in localStorage, hiding admin link');
-                hideAdminLink();
+            if (savedUsername) {
+                const hasAdminAccess = await checkAdminAccess(savedUsername);
+                if (hasAdminAccess) {
+                    console.log('Admin user found in localStorage, showing admin link INSTANTLY');
+                    showAdminLink();
+                } else {
+                    console.log('Non-admin user found in localStorage, hiding admin link');
+                    hideAdminLink();
+                }
             }
         }
 
@@ -552,6 +556,42 @@
                 console.log('Admin link removed successfully');
             } else {
                 console.log('No admin link to remove');
+            }
+        }
+
+        async function checkAdminAccess(username) {
+            console.log('Checking admin access for:', username);
+            
+            // Only check for user cturculeanu
+            if (username !== 'cturculeanu') {
+                console.log('User is not cturculeanu, no admin access');
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`/api/user/${username}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    console.log('User data:', userData);
+                    
+                    // Check if user is from Romania
+                    const country = userData.country;
+                    console.log('User country:', country);
+                    
+                    if (country === 'Romania') {
+                        console.log('Admin access granted: user cturculeanu from Romania');
+                        return true;
+                    } else {
+                        console.log('Admin access denied: user not from Romania');
+                        return false;
+                    }
+                } else {
+                    console.log('Failed to fetch user data');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error checking user location:', error);
+                return false;
             }
         }
 
