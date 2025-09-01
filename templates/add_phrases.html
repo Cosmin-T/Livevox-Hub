@@ -743,7 +743,7 @@
                         <!-- Log entries will be added here dynamically -->
                     </div>
                 </div>
-                <button class="btn btn-danger" onclick="stopAutomation()" id="stopBtn">
+                <button class="btn btn-danger" onclick="stopAutomation()" id="stopBtn" style="margin-top: 15px; display: none;">
                     Stop Automation
                 </button>
             </div>
@@ -1189,6 +1189,12 @@
             progressFill.style.width = '0%';
             progressFill.textContent = '0.0%';
             progressFill.classList.add('pulsing');
+
+            // Show stop button
+            const stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) {
+                stopBtn.style.display = 'block';
+            }
 
             // Clear log content and add initial message (without timestamp like HCI)
             const logContent = document.getElementById('logContent');
