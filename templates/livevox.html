@@ -157,6 +157,24 @@
             border-color: #000000;
         }
 
+        /* Date input specific styling */
+        input[type="date"] {
+            cursor: pointer;
+            position: relative;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: auto;
+            height: auto;
+            background: transparent;
+        }
+
         .btn {
             padding: 12px 24px;
             background-color: #000000;
@@ -583,8 +601,8 @@
                             </select>
                     </div>
                     <div class="form-group">
-                        <label>Start Date (MM/DD/YYYY):</label>
-                        <input type="text" id="startDate1" value="01/01/2024">
+                        <label>Start Date:</label>
+                        <input type="date" id="startDate1" value="2024-01-01" title="Select the start date">
                     </div>
                     <button class="btn" onclick="startAutomation('specific')" style="display: inline-flex; align-items: center; gap: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -612,8 +630,8 @@
                             </select>
                     </div>
                     <div class="form-group">
-                        <label>Start Date (MM/DD/YYYY):</label>
-                        <input type="text" id="startDate2" value="05/01/2024">
+                        <label>Start Date:</label>
+                        <input type="date" id="startDate2" value="2024-05-01" title="Select the start date">
                     </div>
                     <div class="form-group">
                         <label>Phone Numbers (comma-separated):</label>
@@ -643,8 +661,8 @@
                         <textarea id="accountNumbers" rows="4" placeholder="AGA_1234567,AGA_7890123,AGA_4567890"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Start Date (MM/DD/YYYY):</label>
-                        <input type="text" id="startDate3" value="01/01/2024">
+                        <label>Start Date:</label>
+                        <input type="date" id="startDate3" value="2024-01-01" title="Select the start date">
                     </div>
                     <button class="btn" onclick="startAutomation('account')" style="display: inline-flex; align-items: center; gap: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -1738,6 +1756,24 @@
             }
         `;
         document.head.appendChild(style);
+
+        // Make date inputs fully clickable - clicking anywhere opens calendar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to all date inputs
+            const dateInputs = document.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(function(dateInput) {
+                dateInput.addEventListener('click', function() {
+                    // Force the calendar to show by triggering focus and then click
+                    this.focus();
+                    this.showPicker && this.showPicker();
+                });
+
+                // Also handle focus to ensure calendar opens
+                dateInput.addEventListener('focus', function() {
+                    this.showPicker && this.showPicker();
+                });
+            });
+        });
     </script>
 </body>
 </html>
