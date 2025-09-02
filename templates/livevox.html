@@ -617,6 +617,7 @@
                     <p>• First <strong style="font-size: 1.1em;">configure</strong> agents in the <strong style="font-size: 1.1em;">Agent & Call Management</strong> tab, it does <strong style="font-size: 1.1em;">need</strong> call configuration.</p>
                     <p>• Downloads <strong style="font-size: 1.1em;">specific</strong> call recordings with exact duration matching.</p>
                     <p>• Uses the <strong style="font-size: 1.1em;">phone numbers</strong> and <strong style="font-size: 1.1em;">duration</strong> you configured for each agent.</p>
+                    <p>• <strong style="font-size: 1.1em;">Start date</strong> cannot be earlier than <span id="minDateSpecific"></span>.</p>
                 </div>
             </div>
 
@@ -649,6 +650,7 @@
                     <p>• First <strong style="font-size: 1.1em;">configure</strong> agents in the <strong style="font-size: 1.1em;">Agent & Call Management</strong> tab, it does <strong style="font-size: 1.1em;">not need</strong> call configuration.</p>
                     <p>• Downloads <strong style="font-size: 1.1em;">ALL</strong> call recordings for the specified phone numbers.</p>
                     <p>• Enter <strong style="font-size: 1.1em;">multiple</strong> phone numbers separated by commas.</p>
+                    <p>• <strong style="font-size: 1.1em;">Start date</strong> cannot be earlier than <span id="minDateAll"></span>.</p>
                 </div>
             </div>
 
@@ -678,6 +680,7 @@
                     <p>• Downloads <strong style="font-size: 1.1em;">ALL</strong> call recordings for the specified account.</p>
                     <p>• Enter the <strong style="font-size: 1.1em;">account identifier</strong> you want to search for (e.g., AGA_1234567).</p>
                     <p>• Searches for the account itself instead of searching for users.</p>
+                    <p>• <strong style="font-size: 1.1em;">Start date</strong> cannot be earlier than <span id="minDateAccount"></span>.</p>
                 </div>
             </div>
 
@@ -904,6 +907,19 @@
             loadAgentSelects();
             // Check for and resume any active progress
             resumeProgressFromState();
+            
+            // Calculate and display minimum date (730 days ago)
+            const today = new Date();
+            const minDate = new Date();
+            minDate.setDate(today.getDate() - 730);
+            const minDateStr = (minDate.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                              minDate.getDate().toString().padStart(2, '0') + '/' + 
+                              minDate.getFullYear();
+            
+            // Update all minimum date spans
+            document.getElementById('minDateSpecific').textContent = minDateStr;
+            document.getElementById('minDateAll').textContent = minDateStr;
+            document.getElementById('minDateAccount').textContent = minDateStr;
         });
 
         function startSmoothAnimation() {
@@ -1433,7 +1449,13 @@
             if (type !== 'account') {
                 formData.append('agent_id', agentSelect.value);
             }
-            formData.append('start_date', startDate.value);
+            // Convert date from ISO (YYYY-MM-DD) to MM/DD/YYYY format
+            const isoDate = startDate.value;
+            const dateObj = new Date(isoDate + 'T00:00:00'); // Add time to avoid timezone issues
+            const formattedDate = (dateObj.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                 dateObj.getDate().toString().padStart(2, '0') + '/' + 
+                                 dateObj.getFullYear();
+            formData.append('start_date', formattedDate);
             formData.append('username', username);
             formData.append('password', password);
             formData.append('url', portal);

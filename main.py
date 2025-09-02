@@ -2958,7 +2958,7 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
         update_progress(5, "Starting browser...")
 
         async with async_playwright() as playwright:
-            browser = await playwright.webkit.launch(headless=True)
+            browser = await playwright.webkit.launch(headless=False)
             context = await browser.new_context(accept_downloads=True)
             page = await context.new_page()
             await page.set_viewport_size({"width": 1440, "height": 1440})
