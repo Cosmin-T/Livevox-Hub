@@ -1,5 +1,5 @@
-# Use Python 3.11 slim base image
-FROM python:3.11-slim
+# Use Ubuntu-based Python image for better Playwright support
+FROM python:3.11-bookworm
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -16,29 +16,18 @@ COPY requirements-deploy.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements-deploy.txt
 
-# Install system dependencies for Playwright (before installing browsers)
+# Install basic system dependencies and let Playwright handle browser deps
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
     ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libxss1 \
-    libu2f-udev \
-    libvulkan1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright browsers only (skip system deps that fail)
+# Install Playwright browsers first
 RUN playwright install chromium webkit
 
-# Try to install browser dependencies, but don't fail if some are missing
-RUN playwright install-deps chromium webkit || echo "Some browser dependencies could not be installed, continuing..."
+# Install Playwright system dependencies (this handles all the missing libraries)
+RUN playwright install-deps chromium webkit
 
 # Copy application code
 COPY . .

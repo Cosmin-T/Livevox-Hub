@@ -2300,7 +2300,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
             else:
                 # Use webkit for phrases operations (matching original Project3)
                 browser = await playwright.webkit.launch(
-                    headless=True,
+                    headless=False,
                     args=['--no-sandbox', '--disable-dev-shm-usage']
                 )
 
@@ -2502,34 +2502,34 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                         # Click on the phrase
                                         await page.get_by_text(phrase_name, exact=True).click()
                                         update_progress(progress, f"Clicked on {phrase_name}")
+                                        break
+
+                                    # TTS generation logic (outside the loop)
+                                    await asyncio.sleep(1)
+                                    await page.get_by_role("button", name="Generate TTS File").click()
+                                    await asyncio.sleep(1)
+
+                                    # Click on Engine 1
+                                    await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
+                                    # Click on Engine 2
+                                    await page.get_by_text("Engine 2", exact=True).click()
+
+                                    # Generate TTS for each voice
+                                    for j, voice in enumerate(voices):
                                         await asyncio.sleep(1)
-
-                                        # Click the "Generate TTS File" button
-                                        await page.get_by_role("button", name="Generate TTS File").click()
+                                        if j == 0:
+                                            # Click on the first dialect
+                                            await page.locator("#aSelectedDialects svg").click()
+                                        else:
+                                            # Click on the next dialect
+                                            await page.locator("#aSelectedDialects svg").nth(j+1).click()
                                         await asyncio.sleep(1)
+                                        # Click on the selected voice
+                                        await page.get_by_text(voice, exact=True).click()
 
-                                        # Click on Engine 1
-                                        await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
-                                        # Click on Engine 2
-                                        await page.get_by_text("Engine 2", exact=True).click()
-
-                                        # Generate TTS for each voice
-                                        for j, voice in enumerate(voices):
-                                            if phrase_name in web_files:
-                                                await asyncio.sleep(1)
-                                                if j == 0:
-                                                    # Click on the first dialect
-                                                    await page.locator("#aSelectedDialects svg").click()
-                                                else:
-                                                    # Click on the next dialect
-                                                    await page.locator("#aSelectedDialects svg").nth(j+1).click()
-                                                await asyncio.sleep(1)
-                                                # Click on the selected voice
-                                                await page.get_by_text(voice, exact=True).click()
-
-                                        # Click the "Generate" button
-                                        await page.locator("#phrase-tts-dialog__tts-btn").click()
-                                        await asyncio.sleep(3)
+                                    # Click the "Generate" button
+                                    await page.locator("#phrase-tts-dialog__tts-btn").click()
+                                    await asyncio.sleep(3)
 
                                 except Exception as e:
                                     update_progress(progress, f"Error generating TTS for {phrase_name}: {str(e)}")
@@ -2565,37 +2565,38 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                                     # Click on the phrase (EXACTLY like original)
                                     await page.get_by_text(phrase_name, exact=True).click()
+                                    break
 
-                                    try:
+                                # TTS generation logic (outside the loop)
+                                try:
+                                    await asyncio.sleep(1)
+                                    # Click the "Generate TTS File" button
+                                    await page.get_by_role("button", name="Generate TTS File").click()
+
+                                    await asyncio.sleep(1)
+                                    # Click on Engine 1
+                                    await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
+                                    # Click on Engine 2
+                                    await page.get_by_text("Engine 2", exact=True).click()
+
+                                    for j, voice in enumerate(voices):
                                         await asyncio.sleep(1)
-                                        # Click the "Generate TTS File" button
-                                        await page.get_by_role("button", name="Generate TTS File").click()
-
+                                        if j == 0:
+                                            # Click on the first dialect
+                                            await page.locator("#aSelectedDialects svg").click()
+                                        else:
+                                            # Click on the next dialect
+                                            await page.locator("#aSelectedDialects svg").nth(j+1).click()
                                         await asyncio.sleep(1)
-                                        # Click on Engine 1
-                                        await page.locator("div").filter(has_text=re.compile(r"^Engine 1$")).nth(3).click()
-                                        # Click on Engine 2
-                                        await page.get_by_text("Engine 2", exact=True).click()
+                                        # Click on the selected voice
+                                        await page.get_by_text(voice, exact=True).click()
 
-                                        for j, voice in enumerate(voices):
-                                            if phrase_name in web_files:
-                                                await asyncio.sleep(1)
-                                                if j == 0:
-                                                    # Click on the first dialect
-                                                    await page.locator("#aSelectedDialects svg").click()
-                                                else:
-                                                    # Click on the next dialect
-                                                    await page.locator("#aSelectedDialects svg").nth(j+1).click()
-                                                await asyncio.sleep(1)
-                                                # Click on the selected voice
-                                                await page.get_by_text(voice, exact=True).click()
+                                    # Click the "Generate" button
+                                    await page.locator("#phrase-tts-dialog__tts-btn").click()
+                                    await asyncio.sleep(3)
 
-                                        # Click the "Generate" button
-                                        await page.locator("#phrase-tts-dialog__tts-btn").click()
-                                        await asyncio.sleep(3)
-
-                                    except Exception as e:
-                                        update_progress(progress, f"Error generating TTS for {phrase_name}: {str(e)}")
+                                except Exception as e:
+                                    update_progress(progress, f"Error generating TTS for {phrase_name}: {str(e)}")
 
                             except Exception as e:
                                 update_progress(progress, f"Error generating TTS for {phrase_name}: {str(e)}")
@@ -2725,61 +2726,62 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                                     # Find and click on the phrase in the page
                                     await page.get_by_text(phrase_name, exact=True).click()
                                     update_progress(progress, f"Clicked on {phrase_name}")
+                                    break
 
+                                # Upload logic (outside the loop)
+                                try:
+                                    await asyncio.sleep(1)
+                                    # INSTEAD of "Generate TTS File", click "Upload Sound File"
+                                    await page.get_by_role("button", name="Upload Sound File").click()
+
+                                    # Upload logic - upload once and use option 0  
                                     try:
+                                        # Select the file to upload
                                         await asyncio.sleep(1)
-                                        # INSTEAD of "Generate TTS File", click "Upload Sound File"
-                                        await page.get_by_role("button", name="Upload Sound File").click()
+                                        file_input = page.locator("input[type=\"file\"]")
+                                        await file_input.set_input_files(temp_file_path)
+                                        update_progress(progress, f"Uploaded {wav_org_file['filename']}")
 
-                                        # Upload logic - upload once and use option 0
-                                        if phrase_name in web_files:
+                                        # Select the voice to use - always use option 0
+                                        await asyncio.sleep(2)
+                                        await page.locator("#upload-phrase-dialog__voices svg").click()
+                                        await asyncio.sleep(1)
+
+                                        # Wait for voice options to appear and click option 0
+                                        try:
+                                            await page.wait_for_selector("#react-select-5-option-0", timeout=10000)
+                                            await page.locator("#react-select-5-option-0").click()
+                                            update_progress(progress, f"Voice Selected: option 0")
+                                        except Exception as voice_error:
+                                            # Fallback: try other possible option selectors
                                             try:
-                                                # Select the file to upload
-                                                await asyncio.sleep(1)
-                                                file_input = page.locator("input[type=\"file\"]")
-                                                await file_input.set_input_files(temp_file_path)
-                                                update_progress(progress, f"Uploaded {wav_org_file['filename']}")
+                                                await page.wait_for_selector("[id*='react-select'][id*='option-0']", timeout=5000)
+                                                await page.locator("[id*='react-select'][id*='option-0']").first.click()
+                                                update_progress(progress, f"Voice Selected: fallback option 0")
+                                            except Exception:
+                                                update_progress(progress, f"Warning: Could not select voice, using default")
 
-                                                # Select the voice to use - always use option 0
-                                                await asyncio.sleep(2)
-                                                await page.locator("#upload-phrase-dialog__voices svg").click()
-                                                await asyncio.sleep(1)
+                                        # Click the "Upload" button
+                                        await page.locator("#upload-phrase-dialog__upload-btn").click()
 
-                                                # Wait for voice options to appear and click option 0
-                                                try:
-                                                    await page.wait_for_selector("#react-select-5-option-0", timeout=10000)
-                                                    await page.locator("#react-select-5-option-0").click()
-                                                    update_progress(progress, f"Voice Selected: option 0")
-                                                except Exception as voice_error:
-                                                    # Fallback: try other possible option selectors
-                                                    try:
-                                                        await page.wait_for_selector("[id*='react-select'][id*='option-0']", timeout=5000)
-                                                        await page.locator("[id*='react-select'][id*='option-0']").first.click()
-                                                        update_progress(progress, f"Voice Selected: fallback option 0")
-                                                    except Exception:
-                                                        update_progress(progress, f"Warning: Could not select voice, using default")
+                                        try:
+                                            # Wait for alert and click Yes if it appears
+                                            await page.locator('div.lv-alert__content').wait_for(state="visible", timeout=10000)
+                                            update_progress(progress, f"Voice ID overwrite confirmation detected")
+                                            await page.locator('text=Yes').click()
+                                            update_progress(progress, f"Confirmation accepted")
+                                            update_progress(progress, f"Upload Button Clicked")
+                                        except:
+                                            # Alert didn't appear - continue normally
+                                            update_progress(progress, f"Upload Button Clicked")
 
-                                                # Click the "Upload" button
-                                                await page.locator("#upload-phrase-dialog__upload-btn").click()
-
-                                                try:
-                                                    # Wait for alert and click Yes if it appears
-                                                    await page.locator('div.lv-alert__content').wait_for(state="visible", timeout=10000)
-                                                    update_progress(progress, f"Voice ID overwrite confirmation detected")
-                                                    await page.locator('text=Yes').click()
-                                                    update_progress(progress, f"Confirmation accepted")
-                                                    update_progress(progress, f"Upload Button Clicked")
-                                                except:
-                                                    # Alert didn't appear - continue normally
-                                                    update_progress(progress, f"Upload Button Clicked")
-
-                                                await asyncio.sleep(3)
-
-                                            except Exception as e:
-                                                update_progress(progress, f"Error uploading sound: {str(e)}")
+                                        await asyncio.sleep(3)
 
                                     except Exception as e:
-                                        update_progress(progress, f"Error in uploading sound: {str(e)}")
+                                        update_progress(progress, f"Error uploading sound: {str(e)}")
+
+                                except Exception as e:
+                                    update_progress(progress, f"Error in uploading sound: {str(e)}")
                         except Exception as e:
                             update_progress(progress, f"Exception occurred: {str(e)}")
 
