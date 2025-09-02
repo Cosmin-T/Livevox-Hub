@@ -2300,7 +2300,7 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
             else:
                 # Use webkit for phrases operations (matching original Project3)
                 browser = await playwright.webkit.launch(
-                    headless=False,
+                    headless=True,
                     args=['--no-sandbox', '--disable-dev-shm-usage']
                 )
 
@@ -2466,6 +2466,52 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                                     # Save phrase
                                     await page.locator("#add-phrase-dialog__save-btn").click()
+                                    
+                                    # Look for Toastify toast notifications that appear instantly
+                                    try:
+                                        # Check for Toastify toast elements with different selectors
+                                        toast_selectors = [
+                                            '.Toastify__toast',
+                                            '.Toastify__toast--warning',
+                                            '.Toastify__toast--error', 
+                                            '[class*="Toastify__toast"]',
+                                            '.lv-notification',
+                                            '[class*="toast"]',
+                                            '[role="alert"]'
+                                        ]
+                                        
+                                        warning_found = False
+                                        for i in range(5):  # Try 5 times quickly
+                                            await asyncio.sleep(0.05)  # 50ms intervals
+                                            
+                                            for selector in toast_selectors:
+                                                try:
+                                                    toast_elements = await page.query_selector_all(selector)
+                                                    for element in toast_elements:
+                                                        text_content = await element.text_content()
+                                                        if text_content and ('File Name already exists' in text_content or 'already exists' in text_content.lower()):
+                                                            warning_found = True
+                                                            break
+                                                except:
+                                                    continue
+                                            
+                                            if warning_found:
+                                                break
+                                        
+                                        # Only show warning once if found
+                                        if warning_found:
+                                            update_progress(progress, f'WARNING: File Name already exists. Please change the File Name for: {phrase_name}')
+                                        
+                                        # Also check page content as fallback
+                                        if not warning_found:
+                                            await asyncio.sleep(0.1)
+                                            page_content = await page.content()
+                                            if 'File Name already exists' in page_content:
+                                                update_progress(progress, f'WARNING: File Name already exists. Please change the File Name for: {phrase_name}')
+                                        
+                                    except Exception as e:
+                                        update_progress(progress, f'Debug: Warning detection error: {str(e)}')
+                                    
                                     await asyncio.sleep(0.5)
 
                                 except Exception as e:
@@ -2659,7 +2705,52 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
 
                                     # Click the "Save" button
                                     await page.locator("#add-phrase-dialog__save-btn").click()
-                                    update_progress(progress, 'Phrase Added')
+                                    
+                                    # Look for Toastify toast notifications that appear instantly
+                                    try:
+                                        # Check for Toastify toast elements with different selectors
+                                        toast_selectors = [
+                                            '.Toastify__toast',
+                                            '.Toastify__toast--warning',
+                                            '.Toastify__toast--error', 
+                                            '[class*="Toastify__toast"]',
+                                            '.lv-notification',
+                                            '[class*="toast"]',
+                                            '[role="alert"]'
+                                        ]
+                                        
+                                        warning_found = False
+                                        for i in range(5):  # Try 5 times quickly
+                                            await asyncio.sleep(0.05)  # 50ms intervals
+                                            
+                                            for selector in toast_selectors:
+                                                try:
+                                                    toast_elements = await page.query_selector_all(selector)
+                                                    for element in toast_elements:
+                                                        text_content = await element.text_content()
+                                                        if text_content and ('File Name already exists' in text_content or 'already exists' in text_content.lower()):
+                                                            warning_found = True
+                                                            break
+                                                except:
+                                                    continue
+                                            
+                                            if warning_found:
+                                                break
+                                        
+                                        # Only show warning once if found
+                                        if warning_found:
+                                            update_progress(progress, f'WARNING: File Name already exists. Please change the File Name for: {phrase_name}')
+                                        
+                                        # Also check page content as fallback
+                                        if not warning_found:
+                                            await asyncio.sleep(0.1)
+                                            page_content = await page.content()
+                                            if 'File Name already exists' in page_content:
+                                                update_progress(progress, f'WARNING: File Name already exists. Please change the File Name for: {phrase_name}')
+                                        
+                                    except Exception as e:
+                                        update_progress(progress, f'Debug: Warning detection error: {str(e)}')
+                                    
                                     await asyncio.sleep(0.5)
 
                                 except Exception as e:
