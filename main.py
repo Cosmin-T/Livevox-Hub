@@ -2300,7 +2300,8 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
             else:
                 # Use webkit for phrases operations (matching original Project3)
                 browser = await playwright.webkit.launch(
-                    headless=True
+                    headless=True,
+                    args=['--no-sandbox', '--disable-dev-shm-usage']
                 )
 
             update_progress(8, "Creating browser context...")
