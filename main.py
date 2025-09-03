@@ -42,7 +42,16 @@ class DataManager:
     """Manages agent and call data using local JSON storage"""
     def __init__(self, project_name="livevox"):
         self.project_name = project_name
-        self.local_file = f"{project_name}_data.json"
+        # Use /app/data for Docker, current directory for local development
+        if os.path.exists("/app") and os.access("/app", os.W_OK):
+            self.data_dir = "/app/data"
+        else:
+            self.data_dir = "."
+        
+        if self.data_dir != ".":
+            os.makedirs(self.data_dir, exist_ok=True)
+            
+        self.local_file = os.path.join(self.data_dir, f"{project_name}_data.json")
         print(f"Using local storage: {self.local_file}")
 
     def load_data(self):
@@ -1099,7 +1108,11 @@ async def save_converted_file_to_storage(file_data):
     """Save converted audio file to persistent storage"""
     try:
         # Load existing converted files data
-        converted_files_path = "converted_audio_files.json"
+        # Use dynamic path for Docker vs local development
+        if os.path.exists("/app") and os.access("/app", os.W_OK):
+            converted_files_path = "/app/data/converted_audio_files.json"
+        else:
+            converted_files_path = "converted_audio_files.json"
         try:
             with open(converted_files_path, 'r') as f:
                 stored_files = json.load(f)
@@ -1124,7 +1137,11 @@ async def save_converted_file_to_storage(file_data):
 async def delete_converted_file_from_storage(filename: str):
     """Delete a converted audio file from persistent storage"""
     try:
-        converted_files_path = "converted_audio_files.json"
+        # Use dynamic path for Docker vs local development
+        if os.path.exists("/app") and os.access("/app", os.W_OK):
+            converted_files_path = "/app/data/converted_audio_files.json"
+        else:
+            converted_files_path = "converted_audio_files.json"
 
         # Load existing files
         try:
@@ -1155,7 +1172,11 @@ async def delete_converted_file_from_storage(filename: str):
 async def load_converted_files_from_storage():
     """Load converted audio files from persistent storage"""
     try:
-        converted_files_path = "converted_audio_files.json"
+        # Use dynamic path for Docker vs local development
+        if os.path.exists("/app") and os.access("/app", os.W_OK):
+            converted_files_path = "/app/data/converted_audio_files.json"
+        else:
+            converted_files_path = "converted_audio_files.json"
         print(f"Loading converted files from: {converted_files_path}")
 
         with open(converted_files_path, 'r') as f:
@@ -1798,7 +1819,7 @@ async def run_hci_automation(task_id: str, config: Dict[str, Any]):
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch(
                 headless=True,
-                args=['--no-sandbox', '--disable-dev-shm-usage']
+                args=['--disable-dev-shm-usage', '--disable-extensions', '--disable-gpu']
             )
 
             context = await browser.new_context(
@@ -2295,13 +2316,13 @@ async def run_phrases_automation(task_id: str, config: Dict[str, Any]):
                 # Use chromium for file conversion
                 browser = await playwright.chromium.launch(
                     headless=True,
-                    args=['--no-sandbox', '--disable-dev-shm-usage']
+                    args=['--disable-dev-shm-usage', '--disable-extensions', '--disable-gpu']
                 )
             else:
                 # Use webkit for phrases operations (matching original Project3)
                 browser = await playwright.webkit.launch(
-                    headless=True,
-                    args=['--no-sandbox', '--disable-dev-shm-usage']
+                    headless=True
+                    # WebKit doesn't use Chrome args like --no-sandbox
                 )
 
             update_progress(8, "Creating browser context...")
@@ -2958,7 +2979,7 @@ async def run_automation(task_id: str, config: Dict[str, Any]):
         update_progress(5, "Starting browser...")
 
         async with async_playwright() as playwright:
-            browser = await playwright.webkit.launch(headless=False)
+            browser = await playwright.webkit.launch(headless=True)
             context = await browser.new_context(accept_downloads=True)
             page = await context.new_page()
             await page.set_viewport_size({"width": 1440, "height": 1440})
@@ -3510,9 +3531,16 @@ async def run_account_calls_logic(page, config, update_progress):
 # User management system
 class UserManager:
     def __init__(self):
-        self.users_file = "users.json"
-        self.logs_file = "login_logs.json"
-        self.sessions_file = "sessions.json"
+        # Use /app/data for Docker, current directory for local development
+        if os.path.exists("/app") and os.access("/app", os.W_OK):
+            self.data_dir = "/app/data"
+            os.makedirs(self.data_dir, exist_ok=True)
+        else:
+            self.data_dir = "."
+            
+        self.users_file = os.path.join(self.data_dir, "users.json")
+        self.logs_file = os.path.join(self.data_dir, "login_logs.json")
+        self.sessions_file = os.path.join(self.data_dir, "sessions.json")
 
     def load_users(self):
         if os.path.exists(self.users_file):

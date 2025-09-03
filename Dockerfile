@@ -32,8 +32,12 @@ RUN playwright install-deps chromium webkit
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/templates /app/static /app/data
+# Create necessary directories and move JSON files to data volume
+RUN mkdir -p /app/templates /app/static /app/data && \
+    mv /app/*.json /app/data/ 2>/dev/null || true
+
+# Create data volume for persistent storage
+VOLUME ["/app/data"]
 
 # Expose port
 EXPOSE 8001

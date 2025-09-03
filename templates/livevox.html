@@ -602,7 +602,7 @@
                     </div>
                     <div class="form-group">
                         <label>Start Date:</label>
-                        <input type="date" id="startDate1" value="2024-01-01" title="Select the start date">
+                        <input type="date" id="startDate1" title="Select the start date">
                     </div>
                     <button class="btn" onclick="startAutomation('specific')" style="display: inline-flex; align-items: center; gap: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -632,7 +632,7 @@
                     </div>
                     <div class="form-group">
                         <label>Start Date:</label>
-                        <input type="date" id="startDate2" value="2024-05-01" title="Select the start date">
+                        <input type="date" id="startDate2" title="Select the start date">
                     </div>
                     <div class="form-group">
                         <label>Phone Numbers (comma-separated):</label>
@@ -664,7 +664,7 @@
                     </div>
                     <div class="form-group">
                         <label>Start Date:</label>
-                        <input type="date" id="startDate3" value="2024-01-01" title="Select the start date">
+                        <input type="date" id="startDate3" title="Select the start date">
                     </div>
                     <button class="btn" onclick="startAutomation('account')" style="display: inline-flex; align-items: center; gap: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -908,18 +908,32 @@
             // Check for and resume any active progress
             resumeProgressFromState();
             
-            // Calculate and display minimum date (730 days ago)
+            // Calculate and display minimum date (729 days ago)
             const today = new Date();
             const minDate = new Date();
-            minDate.setDate(today.getDate() - 730);
+            minDate.setDate(today.getDate() - 729);
             const minDateStr = (minDate.getMonth() + 1).toString().padStart(2, '0') + '/' + 
                               minDate.getDate().toString().padStart(2, '0') + '/' + 
                               minDate.getFullYear();
+            
+            // Format dates for HTML input (YYYY-MM-DD)
+            const todayStr = today.toISOString().split('T')[0];
+            const minDateInputStr = minDate.toISOString().split('T')[0];
             
             // Update all minimum date spans
             document.getElementById('minDateSpecific').textContent = minDateStr;
             document.getElementById('minDateAll').textContent = minDateStr;
             document.getElementById('minDateAccount').textContent = minDateStr;
+            
+            // Set calendar limits and default values
+            const dateInputs = ['startDate1', 'startDate2', 'startDate3'];
+            dateInputs.forEach(function(inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.min = minDateInputStr;  // Set minimum selectable date
+                    input.value = todayStr;       // Set default to today
+                }
+            });
         });
 
         function startSmoothAnimation() {
@@ -1396,7 +1410,7 @@
 
             // Get the rest of the configuration from the active tab
             let agentSelect, startDate;
-            
+
             if (type === 'specific') {
                 agentSelect = document.getElementById('agentSelect1');
                 startDate = document.getElementById('startDate1');
@@ -1409,7 +1423,7 @@
 
             let phoneNumbers = '';
             let accountSearch = '';
-            
+
             if (type === 'all') {
                 phoneNumbers = document.getElementById('phoneNumbers').value;
                 if (!phoneNumbers.trim()) {
@@ -1417,7 +1431,7 @@
                     return;
                 }
             }
-            
+
             if (type === 'account') {
                 accountSearch = document.getElementById('accountNumbers').value;
                 if (!accountSearch.trim()) {
@@ -1435,7 +1449,7 @@
             }
 
             const formData = new FormData();
-            
+
             // Set function type
             if (type === 'specific') {
                 formData.append('function_type', 'specific_calls');
@@ -1444,7 +1458,7 @@
             } else if (type === 'account') {
                 formData.append('function_type', 'account_calls');
             }
-            
+
             // Add common fields
             if (type !== 'account') {
                 formData.append('agent_id', agentSelect.value);
@@ -1452,14 +1466,14 @@
             // Convert date from ISO (YYYY-MM-DD) to MM/DD/YYYY format
             const isoDate = startDate.value;
             const dateObj = new Date(isoDate + 'T00:00:00'); // Add time to avoid timezone issues
-            const formattedDate = (dateObj.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                                 dateObj.getDate().toString().padStart(2, '0') + '/' + 
+            const formattedDate = (dateObj.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                                 dateObj.getDate().toString().padStart(2, '0') + '/' +
                                  dateObj.getFullYear();
             formData.append('start_date', formattedDate);
             formData.append('username', username);
             formData.append('password', password);
             formData.append('url', portal);
-            
+
             // Add type-specific fields
             if (phoneNumbers) {
                 formData.append('phone_numbers', phoneNumbers);
@@ -1553,7 +1567,7 @@
 
                         if (status.status === 'completed') {
                             clearInterval(progressInterval);
-                            
+
                             // Hide stop button immediately - target the specific Stop Automation button
                             const stopBtn = document.querySelector('button[onclick="stopAutomation()"]');
                             if (stopBtn) {

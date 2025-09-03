@@ -68,6 +68,44 @@ A comprehensive multi-module automation platform designed for LiveVox call cente
 6. **Access the web interface**
    Open your browser to `http://localhost:8001`
 
+### Docker Deployment (Recommended)
+
+For easier deployment with persistent data storage:
+
+1. **Build the Docker image**
+   ```bash
+   docker build -t livevox-deployables .
+   ```
+
+2. **Run the container**
+   ```bash
+   docker run -d -p 8001:8001 --name livevox-deployables-container livevox-deployables
+   ```
+
+3. **Access the application**
+   Open your browser to `http://localhost:8001`
+
+**Docker Features:**
+- ✅ **Built-in data persistence** - All agents, calls, and phrases are automatically saved
+- ✅ **No volume mounting required** - Data persists between container restarts
+- ✅ **Easy deployment** - Single command setup
+- ✅ **Isolated environment** - All dependencies included
+
+**Container Management:**
+```bash
+# Stop the container
+docker stop livevox-deployables-container
+
+# Start the container
+docker start livevox-deployables-container
+
+# View logs
+docker logs livevox-deployables-container
+
+# Remove container (data will be lost)
+docker rm livevox-deployables-container
+```
+
 ## 📖 Usage Guide
 
 ### Initial Setup
